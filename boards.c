@@ -12,6 +12,7 @@
  *              must not be NULL.
  */
 void resetBoard(Board* board) {
+    assert(board != NULL);
     memset(board, 0, sizeof(Board));
     memset(board->pieces, NO_PIECE, sizeof(char) * 64);
 }

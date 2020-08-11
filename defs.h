@@ -1,6 +1,8 @@
 #ifndef DEFS_H_INCLUDED
 #define DEFS_H_INCLUDED
 
+#include <assert.h>
+
 typedef unsigned long long uint64;
 #define NUM_PIECE_TYPES 12
 #define NO_PIECE -1
