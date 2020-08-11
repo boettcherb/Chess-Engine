@@ -28,4 +28,6 @@ enum Color {
     WHITE, BLACK, BOTH_COLORS,
 };
 
+extern const int pieceColor[NUM_PIECE_TYPES];
+
 #endif
