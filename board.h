@@ -33,4 +33,6 @@ typedef struct {
     int ply;
 } Board;
 
+void resetBoard(Board* board);
+
 #endif
