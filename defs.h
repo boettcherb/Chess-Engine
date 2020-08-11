@@ -30,4 +30,9 @@ enum Color {
 
 extern const int pieceColor[NUM_PIECE_TYPES];
 
+// functions only used in debug mode. NDEBUG is included with <assert.h>
+#ifndef NDEBUG
+    int checkBoard(const Board* board);
+#endif
+
 #endif
