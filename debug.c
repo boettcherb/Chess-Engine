@@ -58,7 +58,7 @@ int checkBoard(const Board* board) {
     assert(board->ply >= 0);
     // Loop through each piece in the board and count the number of each piece
     // type. Make sure the numbers of each piece type are valid.
-    int pieceCounts[NUM_PIECE_TYPES];
+    int pieceCounts[NUM_PIECE_TYPES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     for (int square = 0; square < 64; ++square) {
         if (board->pieces[square] != NO_PIECE) {
             int piece = board->pieces[square];
