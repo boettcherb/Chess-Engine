@@ -6,7 +6,7 @@
 /*
  * Clear the board and set all board variables to their default value. The
  * default value for board.pieces[64] is NO_PIECE (-1). board.sideToMove is set
- * to BOTH_COLORS to that an error will be thrown if it is not changed to
+ * to BOTH_COLORS so that an error will be thrown if it is not changed to
  * either WHITE or BLACK when the board is set up. The default value of
  * everything else is 0.
  * 
