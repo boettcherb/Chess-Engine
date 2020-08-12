@@ -35,4 +35,9 @@ typedef struct {
 
 void resetBoard(Board* board);
 
+// functions only used in debug mode. NDEBUG is included with <assert.h>
+#ifndef NDEBUG
+    int checkBoard(const Board* board);
+#endif
+
 #endif
