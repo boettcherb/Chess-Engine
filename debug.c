@@ -76,6 +76,9 @@ int checkBoard(const Board* board) {
     assert(pieceCounts[BLACK_BISHOP] + pieceCounts[BLACK_PAWN] <= 10);
     assert(pieceCounts[BLACK_ROOK] + pieceCounts[BLACK_PAWN] <= 10);
     assert(pieceCounts[BLACK_QUEEN] + pieceCounts[BLACK_PAWN] <= 9);
+    // No pawns can be on the first or eight rank
+    assert(!(board->pieceBitboards[WHITE_PAWN] & 0xFF000000000000FF));
+    assert(!(board->pieceBitboards[BLACK_PAWN] & 0xFF000000000000FF));
     // Create a copy of the board to manipulate (the original is const). Then,
     // for each piece in the board, remove it from both the piece and color
     // bitboards. Check to make sure they still match using getColorBitboard().
