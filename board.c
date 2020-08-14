@@ -95,6 +95,6 @@ int setBoardToFen(Board* board, const char* fen) {
     }
     board->ply = 2 * moveNumber - (side == 'w');
     // TODO: castle permissions, en passant square, fifty move rule
-    checkBoard(board);
+    assert(checkBoard(board));
     return 1;
 }
