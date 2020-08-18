@@ -2,6 +2,7 @@
 #include "board.h"
 
 #include <string.h>
+#include <stdio.h>
 
 /* 
  * Calculate a board's color bitboards from its piece bitboards. If color is
@@ -103,4 +104,27 @@ int checkBoard(const Board* board) {
         }
     }
     return 1;
+}
+
+/*
+ * Print an 8x8 grid of pieces to the console. If there is not a piece on a
+ * square, print '-'. The board will be printed from white's perspective (8th
+ * rank on top, 1st rank on the bottom, A file on the left, and H file on the
+ * right).
+ * 
+ * board:       The board whose pieces will be printed to the console. Passed
+ *              in as a pointer which must not be NULL.
+ */
+void printPieces(const Board* board) {
+    assert(board != NULL);
+    const char pieceChar[NUM_PIECE_TYPES] = {
+        'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'
+    };
+    for (int square = 56; square >= 0; square -= 8) {
+        for (int fileIndex = 0; fileIndex < 8; ++fileIndex) {
+            int piece = board->pieces[square + fileIndex];
+            printf("%c ", piece == NO_PIECE ? '-' : pieceChar[piece]);
+        }
+        putchar('\n');
+    }
 }
