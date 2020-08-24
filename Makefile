@@ -1,4 +1,4 @@
-c_files = main.c defs.c board.c movegen.c
+c_files = main.c defs.c board.c movegen.c attack.c
 
 debug:
 	rm -f chess_debug
