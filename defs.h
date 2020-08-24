@@ -2,6 +2,9 @@
 #define DEFS_H_INCLUDED
 
 #include <assert.h>
+#ifndef NDEBUG
+    #include <stdio.h>
+#endif
 
 typedef unsigned long long uint64;
 #define NUM_PIECE_TYPES 12
