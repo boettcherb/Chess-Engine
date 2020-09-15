@@ -40,17 +40,15 @@ const uint64 kingAttacks[64] = {
  * into check or moving to a square that is already occupied by a piece of the
  * same color, are not removed and are still included in the returned bitboard.
  * 
- * kingPos:      A bitboard with a 1-bit indicating the position of a king
- *               piece. This number must not be 0 and must have only one bit
- *               set to 1
+ * king:      A bitboard with a 1-bit indicating the position of a king piece.
+ *            This number must not be 0 and must have only one bit set to 1.
  * 
- * return:       A bitboard with a 1-bit in every position that the king can
- *               attack.
+ * return:    A bitboard with a 1-bit in every position that the king can attack.
  */
-uint64 getKingAttacks(uint64 kingPos) {
-    assert(kingPos != 0);
-    assert((kingPos & (kingPos - 1)) == 0);
-    return kingAttacks[getLSB(kingPos)];
+uint64 getKingAttacks(uint64 king) {
+    assert(king != 0);
+    assert((king & (king - 1)) == 0);
+    return kingAttacks[getLSB(king)];
 }
 
 /*
@@ -92,17 +90,16 @@ const uint64 knightAttacks[64] = {
  * in every position that the knights can attack. The given knight bitboard can
  * have any number of knights (including zero).
  * 
- * knightPositions:   A bitboard where each 1-bit represents the position of a
- *                    knight.
+ * knights:    A bitboard where each 1-bit represents the position of a knight.
  * 
- * return:            A bitboard where each 1-bit represents a position where
- *                    the knights in knightPositions can attack.
+ * return:     A bitboard where each 1-bit represents a position where the
+ *             knights in the knights bitboard can attack.
  */
-uint64 getKnightAttacks(uint64 knightPositions) {
+uint64 getKnightAttacks(uint64 knights) {
     uint64 attacks = 0;
-    while (knightPositions) {
-        attacks |= knightAttacks[getLSB(knightPositions)];
-        knightPositions &= knightPositions - 1;
+    while (knights) {
+        attacks |= knightAttacks[getLSB(knights)];
+        knights &= knights - 1;
     }
     return attacks;
 }
