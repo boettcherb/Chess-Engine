@@ -4,5 +4,6 @@
 #include "defs.h"
 
 uint64 getKingAttacks(uint64 kingPos);
+uint64 getKnightAttacks(uint64 knightPositions);
 
 #endif
