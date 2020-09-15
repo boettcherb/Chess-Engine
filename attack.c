@@ -21,7 +21,7 @@ int getLSB(uint64 bitboard) {
 }
 
 /*
- * For each index (0-63) there is a 1 bit in the positions that a king at that
+ * For each index (0-63) there is a 1-bit in the positions that a king at that
  * index would be able to attack.
  * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
  * 
@@ -54,7 +54,7 @@ const uint64 kingAttacks[64] = {
 };
 
 /*
- * Given a bitboard with the position of a king, return a bitboard with a 1 bit
+ * Given a bitboard with the position of a king, return a bitboard with a 1-bit
  * in every position that that king can attack. Illegal moves, such as moving
  * into check or moving to a square that is already occupied by a piece of the
  * same color, are not removed and are still included in the returned bitboard.
@@ -63,7 +63,7 @@ const uint64 kingAttacks[64] = {
  *               piece. This number must not be 0 and must have only one bit
  *               set to 1
  * 
- * return:       A bitboard with a 1 bit in every position that the king can
+ * return:       A bitboard with a 1-bit in every position that the king can
  *               attack.
  */
 uint64 getKingAttacks(uint64 kingPos) {
@@ -73,7 +73,7 @@ uint64 getKingAttacks(uint64 kingPos) {
 }
 
 /*
- * For each index (0-63) there is a 1 bit in the positions that a knight at
+ * For each index (0-63) there is a 1-bit in the positions that a knight at
  * that index would be able to attack.
  * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
  * 
