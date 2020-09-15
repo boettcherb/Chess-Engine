@@ -103,3 +103,45 @@ uint64 getKnightAttacks(uint64 knights) {
     }
     return attacks;
 }
+
+/*
+ * Given the position of pawns in a bitboard and their color, return a bitboard
+ * with a 1-bit in every position that those pawns attack if we are only
+ * considering their attacks to the right.
+ * 
+ * pawns:       A bitboard where each 1-bit represents the position of a pawn.
+ * color:       the color of the pawns in the pawns bitboard. Must be either
+ *              WHITE or BLACK
+ * 
+ * return:      A bitboard where each 1-bit represents a position where the 
+ *              pawns in the pawns bitboard can attack to the right.
+ */
+uint64 getPawnAttacksRight(uint64 pawns, int color) {
+    assert(color == WHITE || color == BLACK);
+    if (color == WHITE) {
+        return (pawns << 9) & 0xFEFEFEFEFEFEFEFE;
+    } else {
+        return (pawns << 7) & 0x7F7F7F7F7F7F7F7F;
+    }
+}
+
+/*
+ * Given the position of pawns in a bitboard and their color, return a bitboard
+ * with a 1-bit in every position that those pawns attack if we are only
+ * considering their attacks to the left.
+ * 
+ * pawns:       A bitboard where each 1-bit represents the position of a pawn.
+ * color:       the color of the pawns in the pawns bitboard. Must be either
+ *              WHITE or BLACK
+ * 
+ * return:      A bitboard where each 1-bit represents a position where the 
+ *              pawns in the pawns bitboard can attack to the left.
+ */
+uint64 getPawnAttacksLeft(uint64 pawns, int color) {
+    assert(color == WHITE || color == BLACK);
+    if (color == WHITE) {
+        return (pawns >> 9) & 0x7F7F7F7F7F7F7F7F;
+    } else {
+        return (pawns >> 7) & 0xFEFEFEFEFEFEFEFE;
+    }
+}
