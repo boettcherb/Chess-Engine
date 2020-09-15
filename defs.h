@@ -33,4 +33,6 @@ enum Color {
 
 extern const int pieceColor[NUM_PIECE_TYPES];
 
+extern int getLSB(uint64 bitboard);
+
 #endif
