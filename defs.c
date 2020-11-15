@@ -10,16 +10,51 @@ const int pieceColor[NUM_PIECE_TYPES] = {
  * getLSB(0x1) = 0, getLSB(0x4) = 2, getLSB(0xC00) = 10. There is undefined
  * behavior if the bitboard is equal to 0.
  * 
- * bitboard:     The 64-bit number whose LSB index is retrieved. Must not be 0.
+ * bitboard:   The 64-bit number whose LSB index is retrieved. Must not be 0.
  * 
- * return:       The index of the given bitboard's least significant bit.
+ * return:     The index of the given bitboard's least significant bit.
  */
 int getLSB(uint64 bitboard) {
     assert(bitboard != 0);
-    int index = -1;
-    int found = 0;
-    while (!found) {
-        found = (bitboard >> ++index) & 0x1;
+    int index = 0;
+    while (!(bitboard & 0x1)) {
+        bitboard >>= 1;
+        ++index;
     }
     return index;
+}
+
+/*
+ * Retrieve the index of the given bitboard's most significant bit. Ex: 
+ * getMSB(0x1) = 63, getLSB(0x8) = 60. There is undefined behavior if the 
+ * bitboard is equal to 0.
+ * 
+ * bitboard:   The 64-bit number whose MSB index is retrieved. Must not be 0.
+ * 
+ * return:     The index of the given bitboard's most significant bit.
+ */
+int getMSB(uint64 bitboard) {
+    assert(bitboard != 0);
+    int index = 63;
+    while (!(bitboard & 0x8000000000000000)) {
+        bitboard <<= 1;
+        --index;
+    }
+    return index;
+}
+
+/*
+ * Count and return the number of bits that are set to 1 in the given
+ * bitboard. Ex: countBits(11011100101) = 7, countBits(45) = 4.
+ * 
+ * bitboard:   The 64-bit number whose set bits are counted.
+ * 
+ * return:     The number of bits in the bitboard that are set to 1.
+ */
+int countBits(uint64 bitboard) {
+    int bits;
+    for (bits = 0; bitboard; ++bits) {
+        bitboard &= bitboard - 1;
+    }
+    return bits;
 }
