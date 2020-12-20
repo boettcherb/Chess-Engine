@@ -3,17 +3,23 @@
 
 /*
  * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed North (towards the 8th rank) from that index.
+ * headed in a certain direction from that index. There 8 tables for the 8
+ * cardinal and intercardinal directions (North, South, East, West, Northeast,
+ * Northwest, Southeast, and Southwest). These tables can be used to generate
+ * attack bitboards for sliding pieces. However this method is relatively slow
+ * compared to magic bitboards, and are thus only used to initialize the rook
+ * and bishop attack tables during the initialization of the chess engine.
  * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
  * 
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- * Ex: rayNorth[F2]  =  0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 0 0 0
- *                      0 0 0 0 0 0 0 0
+ *     Ex: rayNorth[F2] =           |         Ex: raySouthEast[C7] =
+ *      0 0 0 0 0 1 0 0             |            0 0 0 0 0 0 0 0
+ *      0 0 0 0 0 1 0 0             |            0 0 0 0 0 0 0 0
+ *      0 0 0 0 0 1 0 0             |            0 0 0 1 0 0 0 0
+ *      0 0 0 0 0 1 0 0             |            0 0 0 0 1 0 0 0
+ *      0 0 0 0 0 1 0 0             |            0 0 0 0 0 1 0 0
+ *      0 0 0 0 0 1 0 0             |            0 0 0 0 0 0 1 0
+ *      0 0 0 0 0 0 0 0             |            0 0 0 0 0 0 0 1
+ *      0 0 0 0 0 0 0 0             |            0 0 0 0 0 0 0 0
  */
 const uint64 rayNorth[64] = {
     0x0101010101010100, 0x0202020202020200, 0x0404040404040400, 0x0808080808080800,
@@ -33,21 +39,6 @@ const uint64 rayNorth[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed South (towards the 1st rank) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                      0 0 0 0 0 0 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- * Ex: raySouth[F8]  =  0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- *                      0 0 0 0 0 1 0 0
- */
 const uint64 raySouth[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
@@ -66,21 +57,6 @@ const uint64 raySouth[64] = {
     0x0001010101010101, 0x0002020202020202, 0x0004040404040404, 0x0008080808080808,
     0x0010101010101010, 0x0020202020202020, 0x0040404040404040, 0x0080808080808080,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed East (towards the A file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- * Ex: rayEast[D5]  =  1 1 1 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- */
 const uint64 rayEast[64] = {
     0x00000000000000FE, 0x00000000000000FC, 0x00000000000000F8, 0x00000000000000F0,
     0x00000000000000E0, 0x00000000000000C0, 0x0000000000000080, 0x0000000000000000,
@@ -99,21 +75,6 @@ const uint64 rayEast[64] = {
     0xFE00000000000000, 0xFC00000000000000, 0xF800000000000000, 0xF000000000000000,
     0xE000000000000000, 0xC000000000000000, 0x8000000000000000, 0x0000000000000000,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed East (towards the H file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- * Ex: rayWest[D5]  =  0 0 0 0 1 1 1 1
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- *                     0 0 0 0 0 0 0 0
- */
 const uint64 rayWest[64] = {
     0x0000000000000000, 0x0000000000000001, 0x0000000000000003, 0x0000000000000007,
     0x000000000000000F, 0x000000000000001F, 0x000000000000003F, 0x000000000000007F,
@@ -132,21 +93,6 @@ const uint64 rayWest[64] = {
     0x0000000000000000, 0x0100000000000000, 0x0300000000000000, 0x0700000000000000,
     0x0F00000000000000, 0x1F00000000000000, 0x3F00000000000000, 0x7F00000000000000,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed NorthWest (towards the 8th rank and the A file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                          0 1 0 0 0 0 0 0
- *                          0 0 1 0 0 0 0 0
- *                          0 0 0 1 0 0 0 0
- * Ex: rayNorthWest[G3]  =  0 0 0 0 1 0 0 0
- *                          0 0 0 0 0 1 0 0
- *                          0 0 0 0 0 0 0 0
- *                          0 0 0 0 0 0 0 0
- *                          0 0 0 0 0 0 0 0
- */
 const uint64 rayNorthWest[64] = {
     0x0000000000000000, 0x0000000000000100, 0x0000000000010200, 0x0000000001020400,
     0x0000000102040800, 0x0000010204081000, 0x0001020408102000, 0x0102040810204000,
@@ -165,21 +111,6 @@ const uint64 rayNorthWest[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed NorthEast (towards the 8th rank and the H file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                          0 0 0 0 0 0 0 1
- *                          0 0 0 0 0 0 1 0
- *                          0 0 0 0 0 1 0 0
- * Ex: rayNorthEast[A1]  =  0 0 0 0 1 0 0 0
- *                          0 0 0 1 0 0 0 0
- *                          0 0 1 0 0 0 0 0
- *                          0 1 0 0 0 0 0 0
- *                          0 0 0 0 0 0 0 0
- */
 const uint64 rayNorthEast[64] = {
     0x8040201008040200, 0x0080402010080400, 0x0000804020100800, 0x0000008040201000,
     0x0000000080402000, 0x0000000000804000, 0x0000000000008000, 0x0000000000000000,
@@ -198,21 +129,6 @@ const uint64 rayNorthEast[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed SouthWest (towards the 1st rank and the A file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                          0 0 0 0 0 0 0 0
- *                          0 0 0 0 0 0 0 0
- *                          0 0 0 0 0 1 0 0
- * Ex: raySouthWest[G7]  =  0 0 0 0 1 0 0 0
- *                          0 0 0 1 0 0 0 0
- *                          0 0 1 0 0 0 0 0
- *                          0 1 0 0 0 0 0 0
- *                          1 0 0 0 0 0 0 0
- */
 const uint64 raySouthWest[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
@@ -231,21 +147,6 @@ const uint64 raySouthWest[64] = {
     0x0000000000000000, 0x0001000000000000, 0x0002010000000000, 0x0004020100000000,
     0x0008040201000000, 0x0010080402010000, 0x0020100804020100, 0x0040201008040201,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that make up a ray
- * headed SouthEast (towards the 1st rank and the H file) from that index.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                          0 0 0 0 0 0 0 0
- *                          0 0 1 0 0 0 0 0
- *                          0 0 0 1 0 0 0 0
- * Ex: raySouthEast[B8]  =  0 0 0 0 1 0 0 0
- *                          0 0 0 0 0 1 0 0
- *                          0 0 0 0 0 0 1 0
- *                          0 0 0 0 0 0 0 1
- *                          0 0 0 0 0 0 0 0
- */
 const uint64 raySouthEast[64] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
