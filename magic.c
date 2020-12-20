@@ -264,3 +264,131 @@ const uint64 raySouthEast[64] = {
     0x0002040810204080, 0x0004081020408000, 0x0008102040800000, 0x0010204080000000,
     0x0020408000000000, 0x0040800000000000, 0x0080000000000000, 0x0000000000000000,
 };
+
+/*
+ * For each index (0-63) there is a 1-bit in the positions that a bishop (for
+ * bishopAttacks[]) or a rook (for rookAttacks[]) at that index would be able
+ * to attack. These arrays are only used with the functions rookAttacksSlow(),
+ * bishopAttacksSlow(), initRookAttackTable(), and initBishopAttackTable()
+ * during the initialization of the chess engine.
+ * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
+ * 
+ *    Ex: bishopAttacks[D4] =     |       Ex: rookAttacks[D4] = 
+ *        0 0 0 0 0 0 0 1         |         0 0 0 1 0 0 0 0
+ *        1 0 0 0 0 0 1 0         |         0 0 0 1 0 0 0 0
+ *        0 1 0 0 0 1 0 0         |         0 0 0 1 0 0 0 0
+ *        0 0 1 0 1 0 0 0         |         0 0 0 1 0 0 0 0
+ *        0 0 0 0 0 0 0 0         |         1 1 1 0 1 1 1 1
+ *        0 0 1 0 1 0 0 0         |         0 0 0 1 0 0 0 0
+ *        0 1 0 0 0 1 0 0         |         0 0 0 1 0 0 0 0
+ *        1 0 0 0 0 0 1 0         |         0 0 0 1 0 0 0 0
+ */
+const uint64 bishopAttacks[64] = {
+    0x8040201008040200, 0x0080402010080500, 0x0000804020110A00, 0x0000008041221400,
+    0x0000000182442800, 0x0000010204885000, 0x000102040810A000, 0x0102040810204000,
+    0x4020100804020002, 0x8040201008050005, 0x00804020110A000A, 0x0000804122140014,
+    0x0000018244280028, 0x0001020488500050, 0x0102040810A000A0, 0x0204081020400040,
+    0x2010080402000204, 0x4020100805000508, 0x804020110A000A11, 0x0080412214001422,
+    0x0001824428002844, 0x0102048850005088, 0x02040810A000A010, 0x0408102040004020,
+    0x1008040200020408, 0x2010080500050810, 0x4020110A000A1120, 0x8041221400142241,
+    0x0182442800284482, 0x0204885000508804, 0x040810A000A01008, 0x0810204000402010,
+    0x0804020002040810, 0x1008050005081020, 0x20110A000A112040, 0x4122140014224180,
+    0x8244280028448201, 0x0488500050880402, 0x0810A000A0100804, 0x1020400040201008,
+    0x0402000204081020, 0x0805000508102040, 0x110A000A11204080, 0x2214001422418000,
+    0x4428002844820100, 0x8850005088040201, 0x10A000A010080402, 0x2040004020100804,
+    0x0200020408102040, 0x0500050810204080, 0x0A000A1120408000, 0x1400142241800000,
+    0x2800284482010000, 0x5000508804020100, 0xA000A01008040201, 0x4000402010080402,
+    0x0002040810204080, 0x0005081020408000, 0x000A112040800000, 0x0014224180000000,
+    0x0028448201000000, 0x0050880402010000, 0x00A0100804020100, 0x0040201008040201,
+};
+const uint64 rookAttacks[64] = {
+    0x01010101010101FE, 0x02020202020202FD, 0x04040404040404FB, 0x08080808080808F7,
+    0x10101010101010EF, 0x20202020202020DF, 0x40404040404040BF, 0x808080808080807F,
+    0x010101010101FE01, 0x020202020202FD02, 0x040404040404FB04, 0x080808080808F708,
+    0x101010101010EF10, 0x202020202020DF20, 0x404040404040BF40, 0x8080808080807F80,
+    0x0101010101FE0101, 0x0202020202FD0202, 0x0404040404FB0404, 0x0808080808F70808,
+    0x1010101010EF1010, 0x2020202020DF2020, 0x4040404040BF4040, 0x80808080807F8080,
+    0x01010101FE010101, 0x02020202FD020202, 0x04040404FB040404, 0x08080808F7080808,
+    0x10101010EF101010, 0x20202020DF202020, 0x40404040BF404040, 0x808080807F808080,
+    0x010101FE01010101, 0x020202FD02020202, 0x040404FB04040404, 0x080808F708080808,
+    0x101010EF10101010, 0x202020DF20202020, 0x404040BF40404040, 0x8080807F80808080,
+    0x0101FE0101010101, 0x0202FD0202020202, 0x0404FB0404040404, 0x0808F70808080808,
+    0x1010EF1010101010, 0x2020DF2020202020, 0x4040BF4040404040, 0x80807F8080808080,
+    0x01FE010101010101, 0x02FD020202020202, 0x04FB040404040404, 0x08F7080808080808,
+    0x10EF101010101010, 0x20DF202020202020, 0x40BF404040404040, 0x807F808080808080,
+    0xFE01010101010101, 0xFD02020202020202, 0xFB04040404040404, 0xF708080808080808,
+    0xEF10101010101010, 0xDF20202020202020, 0xBF40404040404040, 0x7F80808080808080,
+};
+
+/*
+ * Given the square index of a sliding-piece (a bishop or queen when using
+ * bishopAttacksSlow() and a rook or queen when using rookAttacksSlow()) and a
+ * bitboard of every piece on the chessboard, return a bitboard containing the
+ * attacks of that sliding piece.
+ * Generating an attack bitboard for sliding pieces (rook, bishop, queen) is
+ * more difficult than for non-sliding pieces (king, knight, pawn) because we
+ * must take into account the positions of every other piece on the board.
+ * Pieces that limit the movement of sliding pieces are called "blockers" and
+ * can be found using the ray bitboards (ex: bitboard & rayNorth[sq] gives the
+ * blockers to the north of a rook on the square 'sq'). Since there can be
+ * multiple blockers in a single direction, use the getLSB() and getMSB()
+ * functions (defined in defs.c) to find the blocker that is closest to the
+ * sliding piece. Use this blocker and the ray bitboards to limit the attacks
+ * of the sliding piece and to generate the correct attack bitboard.
+ * These functions (bishopAttacksSlow() and rookAttacksSlow()) and the ray
+ * bitboards are only used during the intialization of the chess engine to
+ * fill the sliding piece attack tables. The functions getBishopAttacks(), 
+ * getRookAttacks(), and getQueenAttacks() from attack.c will be used during
+ * run-time to quickly query attack bitboards from the attack tables.
+ * 
+ * square:      An integer denoting the position of a sliding piece (a bishop
+ *              for bishopAttacksSlow() and a rook for rookAttacksSlow()). 
+ *              Must be in the range [0 - 63].
+ * allPiece:    A bitboard with a 1 bit in every position that contains a
+ *              piece.
+ * 
+ * return:      A bitboard with a 1 bit in every position that the sliding
+ *              piece on the square 'square' can attack.
+ */
+uint64 bishopAttacksSlow(int square, uint64 allPieces) {
+    assert(square >= 0 && square < 64);
+    uint64 bishopMoves = bishopAttacks[square];
+    uint64 blockersNorthEast = rayNorthEast[square] & allPieces;
+    uint64 blockersNorthWest = rayNorthWest[square] & allPieces;
+    uint64 blockersSouthEast = raySouthEast[square] & allPieces;
+    uint64 blockersSouthWest = raySouthWest[square] & allPieces;
+    if (blockersNorthEast) {
+        bishopMoves &= ~rayNorthEast[getLSB(blockersNorthEast)];
+    }
+    if (blockersNorthWest) {
+        bishopMoves &= ~rayNorthWest[getLSB(blockersNorthWest)];
+    }
+    if (blockersSouthEast) {
+        bishopMoves &= ~raySouthEast[getMSB(blockersSouthEast)];
+    }
+    if (blockersSouthWest) {
+        bishopMoves &= ~raySouthWest[getMSB(blockersSouthWest)];
+    }
+    return bishopMoves;
+}
+uint64 rookAttacksSlow(int square, uint64 allPieces) {
+    assert(square >= 0 && square < 64);
+    uint64 rookMoves = rookAttacks[square];
+    uint64 blockersNorth = rayNorth[square] & allPieces;
+    uint64 blockersSouth = raySouth[square] & allPieces;
+    uint64 blockersEast = rayEast[square] & allPieces;
+    uint64 blockersWest = rayWest[square] & allPieces;
+    if (blockersNorth) {
+        rookMoves &= ~rayNorth[getLSB(blockersNorth)];
+    }
+    if (blockersSouth) {
+        rookMoves &= ~raySouth[getMSB(blockersSouth)];
+    }
+    if (blockersEast) {
+        rookMoves &= ~rayEast[getLSB(blockersEast)];
+    }
+    if (blockersWest) {
+        rookMoves &= ~rayWest[getMSB(blockersWest)];
+    }
+    return rookMoves;
+}
