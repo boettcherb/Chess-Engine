@@ -3,6 +3,9 @@
 
 #include "defs.h"
 
-
+void initBishopAttackTable(void);
+void initRookAttackTable(void);
+int getBishopAttackIndex(int square, uint64 blockers);
+int getRookAttackIndex(int square, uint64 blockers);
 
 #endif

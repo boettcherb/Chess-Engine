@@ -244,11 +244,11 @@ const uint64 rookAttacks[64] = {
  * 
  * square:      An integer denoting the position of a sliding piece (a bishop
  *              for bishopAttacksSlow() and a rook for rookAttacksSlow()). 
- *              Must be in the range [0 - 63].
- * allPiece:    A bitboard with a 1 bit in every position that contains a
+ *              Must be in the range [0 - 64).
+ * allPiece:    A bitboard with a 1-bit in every position that contains a
  *              piece.
  * 
- * return:      A bitboard with a 1 bit in every position that the sliding
+ * return:      A bitboard with a 1-bit in every position that the sliding
  *              piece on the square 'square' can attack.
  */
 uint64 bishopAttacksSlow(int square, uint64 allPieces) {
@@ -292,4 +292,177 @@ uint64 rookAttacksSlow(int square, uint64 allPieces) {
         rookMoves &= ~rayWest[getMSB(blockersWest)];
     }
     return rookMoves;
+}
+
+/*
+ * Sliding piece attack tables. For all squares on the board (64), and for
+ * every possible bitboard of blockers (512 for bishops and 4096 for rooks)
+ * for a piece on that square, store all the possible attacks of that piece.
+ * A "blocker" is any piece that could potentially limit the movement of a
+ * sliding piece. A blocker cannot be on the edge of the board and must be on
+ * the same row/column as a rook or the same diagonal as a bishop. A blocker
+ * bitboard (a bitboard with only blockers for a piece on a certain square) is
+ * converted into an index using magic numbers, and that index is used to
+ * index into the attack tables.
+ */
+uint64 bishopAttackTable[64][512];
+uint64 rookAttackTable[64][4096];
+
+/*
+ * Arrays to hold the maximum possible number of blockers for a rook or bishop
+ * on the given square. These arrays are used to initialize the bishop and
+ * rook attack tables and to determine how much to shift the generated index
+ * into the attack tables.A value of n on the square sq means that there are n
+ * squares that could contain blockers for the square sq, and that the total
+ * number of unique blocker bitboards for the sqare sq is 2^n (each of the n
+ * squares either contains a blocker or doesn't).
+ */
+const char numBishopBlockers[64] = {
+    6, 5, 5, 5, 5, 5, 5, 6,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 5, 5, 5, 5, 5, 5, 6,
+};
+const char numRookBlockers[64] = {
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    12, 11, 11, 11, 11, 11, 11, 12,
+};
+
+/*
+ * Magic number tables. These magic numbers are used when querying into the
+ * bishop and rook attack tables to retrieve an attack bitboard. A blocker
+ * bitboard, when multiplied by a magic number, generates a bitboard where the
+ * upper n bits can be used as an index into the attack tables. n a value from 
+ * the numBishopBlockers[] or numRookBlockers[] arrays. This bitboard can then
+ * be shifted left to retrieve the index.
+ */
+const uint64 rookMagics[64] = {
+    0x0A8002C000108020, 0x06C00049B0002001, 0x0100200010090040, 0x2480041000800801,
+    0x0280028004000800, 0x0900410008040022, 0x0280020001001080, 0x2880002041000080,
+    0xA000800080400034, 0x0004808020004000, 0x2290802004801000, 0x0411000D00100020,
+    0x0402800800040080, 0x000B000401004208, 0x2409000100040200, 0x0001002100004082,
+    0x0022878001E24000, 0x1090810021004010, 0x0801030040200012, 0x0500808008001000,
+    0x0A08018014000880, 0x8000808004000200, 0x0201008080010200, 0x0801020000441091,
+    0x0000800080204005, 0x1040200040100048, 0x0000120200402082, 0x0D14880480100080,
+    0x0012040280080080, 0x0100040080020080, 0x9020010080800200, 0x0813241200148449,
+    0x0491604001800080, 0x0100401000402001, 0x4820010021001040, 0x0400402202000812,
+    0x0209009005000802, 0x0810800601800400, 0x4301083214000150, 0x204026458E001401,
+    0x0040204000808000, 0x8001008040010020, 0x8410820820420010, 0x1003001000090020,
+    0x0804040008008080, 0x0012000810020004, 0x1000100200040208, 0x430000A044020001,
+    0x0280009023410300, 0x00E0100040002240, 0x0000200100401700, 0x2244100408008080,
+    0x0008000400801980, 0x0002000810040200, 0x8010100228810400, 0x2000009044210200,
+    0x4080008040102101, 0x0040002080411D01, 0x2005524060000901, 0x0502001008400422,
+    0x489A000810200402, 0x0001004400080A13, 0x4000011008020084, 0x0026002114058042,
+};
+const uint64 bishopMagics[64] = {
+    0x89a1121896040240, 0x2004844802002010, 0x2068080051921000, 0x62880a0220200808,
+    0x0004042004000000, 0x0100822020200011, 0xc00444222012000a, 0x0028808801216001,
+    0x0400492088408100, 0x0201c401040c0084, 0x00840800910a0010, 0x0000082080240060,
+    0x2000840504006000, 0x30010c4108405004, 0x1008005410080802, 0x8144042209100900,
+    0x0208081020014400, 0x004800201208ca00, 0x0F18140408012008, 0x1004002802102001,
+    0x0841000820080811, 0x0040200200a42008, 0x0000800054042000, 0x88010400410c9000,
+    0x0520040470104290, 0x1004040051500081, 0x2002081833080021, 0x000400c00c010142,
+    0x941408200c002000, 0x0658810000806011, 0x0188071040440a00, 0x4800404002011c00,
+    0x0104442040404200, 0x0511080202091021, 0x0004022401120400, 0x80c0040400080120,
+    0x8040010040820802, 0x0480810700020090, 0x0102008e00040242, 0x0809005202050100,
+    0x8002024220104080, 0x0431008804142000, 0x0019001802081400, 0x0200014208040080,
+    0x3308082008200100, 0x041010500040c020, 0x4012020c04210308, 0x208220a202004080,
+    0x0111040120082000, 0x6803040141280a00, 0x2101004202410000, 0x8200000041108022,
+    0x0000021082088000, 0x0002410204010040, 0x0040100400809000, 0x0822088220820214,
+    0x0040808090012004, 0x00910224040218c9, 0x0402814422015008, 0x0090014004842410,
+    0x0001000042304105, 0x0010008830412a00, 0x2520081090008908, 0x40102000a0a60140,
+};
+
+/*
+ * Initialize the bishop and rook attack tables. In these functions, every
+ * possible blocker bitboard is generated for every square, and the functions
+ * getBishopAttacksSlow() and getRookAttacksSlow() are used to generate an
+ * attack bitboard for each blocker bitboard. These attack bitboards are
+ * stored in the bishop and rook attack tables, and during execution are
+ * queried using blocker bitboards and magic numbers.
+ */
+void initBishopAttackTable(void) {
+    for (int square = 0; square < 64; ++square) {
+        int numBlockerBoards = 1 << numBishopBlockers[square];
+        for (int blockerIdx = 0; blockerIdx < numBlockerBoards; ++blockerIdx) {
+            uint64 innerAttacks = bishopAttacks[square] & 0x007E7E7E7E7E7E00;
+            uint64 blockers = 0ULL;
+            for (int i = 0; innerAttacks; i++) {
+                int bitPos = getLSB(innerAttacks);
+                if (blockerIdx & (1 << i)) {
+                    blockers |= (1ULL << bitPos);
+                }
+                innerAttacks &= innerAttacks - 1;
+            }
+            uint64 key = blockers * bishopMagics[square];
+            key >>= (64 - numBishopBlockers[square]);
+            assert(key >= 0 && key < 512);
+            uint64 attackBitboard = bishopAttacksSlow(square, blockers);
+            bishopAttackTable[square][key] = attackBitboard;
+        }
+    }
+}
+void initRookAttackTable(void) {
+    for (int square = 0; square < 64; ++square) {
+        int numBlockerBoards = 1 << numRookBlockers[square];
+        for (int blockerIdx = 0; blockerIdx < numBlockerBoards; ++blockerIdx) {
+            uint64 innerAttacks = rookAttacks[square] & 0x007E7E7E7E7E7E00;
+            uint64 blockers = 0ULL;
+            for (int i = 0; innerAttacks; i++) {
+                int bitPos = getLSB(innerAttacks);
+                if (blockerIdx & (1 << i)) {
+                    blockers |= (1ULL << bitPos);
+                }
+                innerAttacks &= innerAttacks - 1;
+            }
+            uint64 key = blockers * rookMagics[square];
+            key >>= (64 - numRookBlockers[square]);
+            assert(key >= 0 && key < 4096);
+            uint64 attackBitboard = rookAttacksSlow(square, blockers);
+            rookAttackTable[square][key] = attackBitboard;
+        }
+    }
+}
+
+/*
+ * Retrieve an index into the bishop and rook attack tables. Generate the
+ * index by multiplying the blocker bitboard with a magic number for the
+ * given square. The index is in the upper bits of the result of the
+ * multiplication, and can be retrieved by shifting the result left by 64
+ * minus the max possible blockers for the given square.
+ * 
+ * square:           The square with the rook or bishop whose attack table
+ *                   we want. Must be in the range [0 - 64).
+ * blockers:         The blockers for the bishop or rook on the given square.
+ *                   Only the possible blocker squares can have a 1-bit.
+ * 
+ * return:           An index into the rook or bishop attack tables. Must be 
+ *                   in the range [0-512) for bishops and in the range
+ *                   [0-4096) for rooks.
+ */
+int getBishopAttackIndex(int square, uint64 blockers) {
+    assert(square >= 0 && square < 64);
+    assert(!(~(bishopAttacks[square] & 0x007E7E7E7E7E7E00) & blockers));
+    int shift = 64 - numBishopBlockers[square];
+    int index = (blockers * bishopMagics[square]) >> shift;
+    assert(index >= 0 && index < (1 << numBishopBlockers[square]));
+    return index;
+}
+int getRookAttackIndex(int square, uint64 blockers) {
+    assert(square >= 0 && square < 64);
+    assert(!(~(rookAttacks[square] & 0x007E7E7E7E7E7E00) & blockers));
+    int shift = 64 - numRookBlockers[square];
+    int index = (blockers * rookMagics[square]) >> shift;
+    assert(index >= 0 && index < (1 << numRookBlockers[square]));
+    return index;
 }
