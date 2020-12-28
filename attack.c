@@ -2,18 +2,24 @@
 #include "defs.h"
 
 /*
- * For each index (0-63) there is a 1-bit in the positions that a king at that
- * index would be able to attack.
+ * Attack bitboards for knights and kings. If there is a king on D4, then you
+ * can retrieve the attack bitboard for that king with kingAttacks[D4]. This
+ * attack bitboard has a 1-bit in every position that that piece (the king)
+ * can attack. Only kings and knights have attack bitboards here because the
+ * sliding pieces (bishops, rooks, queens) can be blocked by other pieces and
+ * need a different method to generate their attacks (magic numbers), and the
+ * pawns only need a couple bit shifts.
  * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
  * 
- *                         0 0 0 0 0 0 0 0
- *                         0 0 0 0 0 0 0 0
- *                         0 0 0 0 0 0 0 0
- * Ex: kingAttacks[D4]  =  0 0 1 1 1 0 0 0
- *                         0 0 1 0 1 0 0 0
- *                         0 0 1 1 1 0 0 0
- *                         0 0 0 0 0 0 0 0
- *                         0 0 0 0 0 0 0 0
+ *        Ex: kingAttacks[D4] =       |       Ex: knightAttacks[D4] = 
+ *         0 0 0 0 0 0 0 0            |          0 0 0 0 0 0 0 0
+ *         0 0 0 0 0 0 0 0            |          0 0 0 0 0 0 0 0
+ *         0 0 0 0 0 0 0 0            |          0 0 1 0 1 0 0 0
+ *         0 0 1 1 1 0 0 0            |          0 1 0 0 0 1 0 0
+ *         0 0 1 0 1 0 0 0            |          0 0 0 0 0 0 0 0
+ *         0 0 1 1 1 0 0 0            |          0 1 0 0 0 1 0 0
+ *         0 0 0 0 0 0 0 0            |          0 0 1 0 1 0 0 0
+ *         0 0 0 0 0 0 0 0            |          0 0 0 0 0 0 0 0
  */
 const uint64 kingAttacks[64] = {
     0x0000000000000302, 0x0000000000000705, 0x0000000000000E0A, 0x0000000000001C14,
@@ -33,38 +39,6 @@ const uint64 kingAttacks[64] = {
     0x0203000000000000, 0x0507000000000000, 0x0A0E000000000000, 0x141C000000000000,
     0x2838000000000000, 0x5070000000000000, 0xA0E0000000000000, 0x40C0000000000000,
 };
-
-/*
- * Given a bitboard with the position of a king, return a bitboard with a 1-bit
- * in every position that that king can attack. Illegal moves, such as moving
- * into check or moving to a square that is already occupied by a piece of the
- * same color, are not removed and are still included in the returned bitboard.
- * 
- * king:      A bitboard with a 1-bit indicating the position of a king piece.
- *            This number must not be 0 and must have only one bit set to 1.
- * 
- * return:    A bitboard with a 1-bit in every position that the king can attack.
- */
-uint64 getKingAttacks(uint64 king) {
-    assert(king != 0);
-    assert((king & (king - 1)) == 0);
-    return kingAttacks[getLSB(king)];
-}
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that a knight at
- * that index would be able to attack.
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                           0 0 0 0 0 0 0 0
- *                           0 0 0 0 0 0 0 0
- *                           0 0 1 0 1 0 0 0
- * Ex: knightAttacks[D4]  =  0 1 0 0 0 1 0 0
- *                           0 0 0 0 0 0 0 0
- *                           0 1 0 0 0 1 0 0
- *                           0 0 1 0 1 0 0 0
- *                           0 0 0 0 0 0 0 0
- */
 const uint64 knightAttacks[64] = {
     0x0000000000020400, 0x0000000000050800, 0x00000000000A1100, 0x0000000000142200,
     0x0000000000284400, 0x0000000000508800, 0x0000000000A01000, 0x0000000000402000,
@@ -83,6 +57,26 @@ const uint64 knightAttacks[64] = {
     0x0004020000000000, 0x0008050000000000, 0x00110A0000000000, 0x0022140000000000,
     0x0044280000000000, 0x0088500000000000, 0x0010A00000000000, 0x0020400000000000,
 };
+
+/*
+ * Given a bitboard with the position of a king, return a bitboard with a 1-bit
+ * in every position that that king can attack. Illegal moves, such as moving
+ * into check or moving to a square that is already occupied by a piece of the
+ * same color, are not removed and are still included in the returned bitboard.
+ * The parameter is a bitboard with a single king (as opposed to its square
+ * index) because this is how the board struct stores the king's position.
+ * 
+ * king:      A bitboard with a 1-bit indicating the position of a king piece.
+ *            This number must not be 0 and must have only one bit set to 1.
+ * 
+ * return:    A bitboard with a 1-bit in every position that the king can
+ *            attack.
+ */
+uint64 getKingAttacks(uint64 king) {
+    assert(king != 0);
+    assert((king & (king - 1)) == 0);
+    return kingAttacks[getLSB(king)];
+}
 
 /*
  * Given the position of knights in a bitboard, return a bitboard with a 1-bit
@@ -104,16 +98,28 @@ uint64 getKnightAttacks(uint64 knights) {
 }
 
 /*
- * Given the position of pawns in a bitboard and their color, return a bitboard
- * with a 1-bit in every position that those pawns attack if we are only
- * considering their attacks to the right.
+ * Given a bitboard with the position of all pawns of either color, find all
+ * the possible attacks to the right (getPawnAttacksRight()) or left
+ * (getPawnAttacksLeft()). A pawn can attack one square diagonally to the left
+ * (ex: D4 to C5) or to the right (ex: D4 to E5). The left and right attacks
+ * are separated (as opposed to getPawnAttacks()) so that the caller knows
+ * where the attacking piece is. For example, if the getPawnAttacksRight()
+ * returns a bitboard with a 1-bit on F3, the caller knows that the pawn must
+ * be on E2. If the left and right attacks were combined, the caller wouldn't 
+ * know whether it was on E2 or G2. These functions take in a bitboard with
+ * every pawn of one color on the board (as opposed to 1 pawn at a time)
+ * because we can use bitwise operations to find the attacks of all pawns
+ * at the same time.
  * 
- * pawns:       A bitboard where each 1-bit represents the position of a pawn.
- * color:       the color of the pawns in the pawns bitboard. Must be either
- *              WHITE or BLACK
+ * pawns:         A bitboard where each 1-bit represents the position of a pawn
+ *                of a certain color. All pawns in this bitboard must be the
+ *                same color.
+ * color:         The color of the pawns in the given bitboard. Must be either
+ *                WHITE or BLACK.
  * 
- * return:      A bitboard where each 1-bit represents a position where the 
- *              pawns in the pawns bitboard can attack to the right.
+ * return:        A bitboard where each 1-bit represents a position where a
+ *                pawn can attack to the right (getPawnAttacksRight()) or to
+ *                the left (getPawnAttacksLeft())
  */
 uint64 getPawnAttacksRight(uint64 pawns, int color) {
     assert(color == WHITE || color == BLACK);
@@ -123,19 +129,6 @@ uint64 getPawnAttacksRight(uint64 pawns, int color) {
         return (pawns << 7) & 0x7F7F7F7F7F7F7F7F;
     }
 }
-
-/*
- * Given the position of pawns in a bitboard and their color, return a bitboard
- * with a 1-bit in every position that those pawns attack if we are only
- * considering their attacks to the left.
- * 
- * pawns:       A bitboard where each 1-bit represents the position of a pawn.
- * color:       the color of the pawns in the pawns bitboard. Must be either
- *              WHITE or BLACK
- * 
- * return:      A bitboard where each 1-bit represents a position where the 
- *              pawns in the pawns bitboard can attack to the left.
- */
 uint64 getPawnAttacksLeft(uint64 pawns, int color) {
     assert(color == WHITE || color == BLACK);
     if (color == WHITE) {
@@ -145,23 +138,25 @@ uint64 getPawnAttacksLeft(uint64 pawns, int color) {
     }
 }
 
-
 /*
- * For each index (0-63) there is a 1-bit in the positions that a piece could
- * be in to block a bishop at that index. A piece blocks a bishop if it is on
- * the same diagonal (either one) as the bishop and is not on the edge of the
- * board (a piece on the edge of the board does not block any squares from the
- * bishop).
+ * Sliding piece blockers. A "blocker" is a piece that limits the movement of a
+ * sliding piece. A blocker must be on the same diagonal as a bishop and the
+ * same rank/file of a rook. Pieces on the edge of the board are not blockers.
+ * For example, a rook on D4 is "blocked" by a piece on C4 and B4, but not by a
+ * piece on A4. The rook can "see" A4 regardless of whether a piece is there.
+ * There is no queenBlockers[] because a queen is just the combination of a 
+ * rook and bishop.
  * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
  * 
- *                            0 0 0 0 0 0 0 0
- *                            0 0 0 0 0 0 1 0
- *                            0 1 0 0 0 1 0 0
- * Ex: bishopBlockers[D4]  =  0 0 1 0 1 0 0 0
- *                            0 0 0 0 0 0 0 0
- *                            0 0 1 0 1 0 0 0
- *                            0 1 0 0 0 1 0 0
- *                            0 0 0 0 0 0 0 0
+ *    Ex: bishopBlockers[D4]                      Ex: rookBlockers[D4]
+ *       0 0 0 0 0 0 0 0               |            0 0 0 0 0 0 0 0
+ *       0 0 0 0 0 0 1 0               |            0 0 0 1 0 0 0 0
+ *       0 1 0 0 0 1 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 1 0 1 0 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 0 0 0 0 0 0               |            0 1 1 0 1 1 1 0
+ *       0 0 1 0 1 0 0 0               |            0 0 0 1 0 0 0 0
+ *       0 1 0 0 0 1 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 0 0 0 0 0 0               |            0 0 0 0 0 0 0 0
  */
 const uint64 bishopBlockers[64] = {
     0x0040201008040200, 0x0000402010080400, 0x0000004020100A00, 0x0000000040221400,
@@ -181,23 +176,6 @@ const uint64 bishopBlockers[64] = {
     0x0002040810204000, 0x0004081020400000, 0x000A102040000000, 0x0014224000000000,
     0x0028440200000000, 0x0050080402000000, 0x0020100804020000, 0x0040201008040200,
 };
-
-/*
- * For each index (0-63) there is a 1-bit in the positions that a piece could
- * be in to block a rook at that index. A piece blocks a rook if it is on the
- * same row or column as the rook and is not on the edge of the board (a piece
- * on the edge of the board does not block any squares from the rook).
- * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
- * 
- *                          0 0 0 0 0 0 0 0
- *                          0 0 0 1 0 0 0 0
- *                          0 0 0 1 0 0 0 0
- * Ex: rookBlockers[D4]  =  0 0 0 1 0 0 0 0
- *                          0 1 1 0 1 1 1 0
- *                          0 0 0 1 0 0 0 0
- *                          0 0 0 1 0 0 0 0
- *                          0 0 0 0 0 0 0 0
- */
 const uint64 rookBlockers[64] = {
     0x000101010101017E, 0x000202020202027C, 0x000404040404047A, 0x0008080808080876,
     0x001010101010106E, 0x002020202020205E, 0x004040404040403E, 0x008080808080807E,
@@ -218,78 +196,50 @@ const uint64 rookBlockers[64] = {
 };
 
 /*
- * Sliding piece attack tables (defined and initialized in magic.c). For all
- * squares on the board (64), and for every possible bitboard of blockers (512
- * for bishops and 4096 for rooks) for a piece on that square, store all the
- * possible attacks of that piece. A "blocker" is any piece that could
- * potentially limit the movement of a sliding piece. A blocker cannot be on
- * the edge of the board and must be on the same row/column as a rook or the
- * same diagonal as a bishop. A blocker bitboard (a bitboard with only
- * blockers for a piece on a certain square) is converted into an index using
- * magic numbers, and that index is used to index into the attack tables.
+ * Sliding piece attack tables (defined and initialized in magic.c). Used by 
+ * the functions getBishopAttacks(), getRookAttacks(), and getQueenAttacks() to
+ * quickly retrieve the attack bitboards of sliding pieces.
  */
 extern uint64 bishopAttackTable[64][512];
 extern uint64 rookAttackTable[64][4096];
 
 /*
- * Given the position of a bishop and a bitboard containing the positions of
- * every piece on the board, return a bitboard containing the squares that the
- * bishop could move to or attack. The returned bitboard does not exclude
- * attacks to allied pieces (pieces on the same side as the bishop).
+ * Given the position of a sliding piece and a bitboard of all the pieces on
+ * the board, find the attack bitboard of that piece. Use getBishopAttacks()
+ * for bishops, getRookAttacks() for rooks, and getQueenAttacks() for queens.
+ * These functions use the allPieces bitboard to generate a bitboard of
+ * blockers, then use this blocker bitboard to generate an index into the
+ * attack tables.
  * 
- * square:      The index of a square that contains the bishop. Must be
- *              between 0 and 63 inclusive.
- * blockers:    A bitboard where a 1-bit represents the position of a piece.
- *              This bitboard should contain pieces of both sides.
+ * square:        The index of a square that contains a sliding piece (a
+ *                bishop for getBishopAttacks(), a rook for getRookAttacks(),
+ *                and a queen for getQueenAttacks()).
+ * allPieces:     A bitboard where each 1-bit represents the position of a
+ *                piece. This bitboard contains pieces of both sides and must
+ *                contain the sliding piece on the given square.
  * 
- * return:      A bitboard where each 1-bit represents a position where the 
- *              bishop could move to or attack.
+ * return:        A bitboard where each 1-bit represents a position where the
+ *                sliding piece on the given square could attack.
  */
-uint64 getBishopAttacks(int square, uint64 blockers) {
+uint64 getBishopAttacks(int square, uint64 allPieces) {
     assert(square >= 0 && square < 64);
-    blockers &= bishopBlockers[square];
+    assert(allPieces & (1ULL << square));
+    uint64 blockers = allPieces & bishopBlockers[square];
     uint64 attackIndex = getBishopAttackIndex(blockers, square);
     assert(attackIndex >= 0 && attackIndex < 512);
     return bishopAttackTable[square][attackIndex];
 }
-
-/*
- * Given the position of a rook and a bitboard containing the positions of
- * every piece on the board, return a bitboard containing the squares that the
- * rook could move to or attack. The returned bitboard does not exclude
- * attacks to allied pieces (pieces on the same side as the rook).
- * 
- * square:      The index of a square that contains the rook. Must be
- *              between 0 and 63 inclusive.
- * blockers:    A bitboard where a 1-bit represents the position of a piece.
- *              This bitboard should contain pieces of both sides.
- * 
- * return:      A bitboard where each 1-bit represents a position where the 
- *              rook could move to or attack.
- */
-uint64 getRookAttacks(int square, uint64 blockers) {
+uint64 getRookAttacks(int square, uint64 allPieces) {
     assert(square >= 0 && square < 64);
-    blockers &= rookBlockers[square];
+    assert(allPieces & (1ULL << square));
+    uint64 blockers = allPieces & rookBlockers[square];
     uint64 attackIndex = getRookAttackIndex(blockers, square);
     assert(attackIndex >= 0 && attackIndex < 4096);
     return rookAttackTable[square][attackIndex];
 }
-
-/*
- * Given the position of a queen and a bitboard containing the positions of
- * every piece on the board, return a bitboard containing the squares that the
- * queen could move to or attack. The returned bitboard does not exclude
- * attacks to allied pieces (pieces on the same side as the queen).
- * 
- * square:      The index of a square that contains the queen. Must be
- *              between 0 and 63 inclusive.
- * blockers:    A bitboard where a 1-bit represents the position of a piece.
- *              This bitboard should contain pieces of both sides.
- * 
- * return:      A bitboard where each 1-bit represents a position where the 
- *              queen could move to or attack.
- */
-uint64 getQueenAttacks(int square, uint64 blockers) {
+uint64 getQueenAttacks(int square, uint64 allPieces) {
     assert(square >= 0 && square < 64);
-    return getBishopAttacks(square, blockers) | getRookAttacks(square, blockers);
+    assert(allPieces & (1ULL << square));
+    return getBishopAttacks(square, allPieces) |
+        getRookAttacks(square, allPieces);
 }
