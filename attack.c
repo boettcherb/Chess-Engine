@@ -79,22 +79,20 @@ uint64 getKingAttacks(uint64 king) {
 }
 
 /*
- * Given the position of knights in a bitboard, return a bitboard with a 1-bit
- * in every position that the knights can attack. The given knight bitboard can
- * have any number of knights (including zero).
+ * Given the position of a knight, return the attack bitboard of that knight.
+ * This function takes in the index of a single knight instead of a bitboard
+ * of multiple knights so that the caller is able to match the knight with
+ * the squares that it attacks.
  * 
- * knights:    A bitboard where each 1-bit represents the position of a knight.
+ * knights:    The index of a square that contains a knight. Must be in the
+ *             range [0-64).
  * 
  * return:     A bitboard where each 1-bit represents a position where the
- *             knights in the knights bitboard can attack.
+ *             knight on the given square can attack.
  */
-uint64 getKnightAttacks(uint64 knights) {
-    uint64 attacks = 0;
-    while (knights) {
-        attacks |= knightAttacks[getLSB(knights)];
-        knights &= knights - 1;
-    }
-    return attacks;
+uint64 getKnightAttacks(int square) {
+    assert(square >= 0 && square < 64);
+    return knightAttacks[square];
 }
 
 /*
