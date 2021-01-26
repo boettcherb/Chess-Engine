@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "board.h"
+#include "movegen.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -101,6 +102,78 @@ int checkBoard(const Board* board) {
             boardCopy.pieceBitboards[piece] |= (1ULL << square);
             boardCopy.colorBitboards[color] |= (1ULL << square);
             boardCopy.colorBitboards[BOTH_COLORS] |= (1ULL << square);
+        }
+    }
+    return 1;
+}
+
+/* Check the given move to make sure it is valid. Each move has 5 parts: the
+ * 'from' square, the 'to' square, the captured piece, the promoted piece, and
+ * the move flags. Check for discrepencies such as the captured piece being a
+ * king or the promotion flag and castle flag both being set. This is a
+ * debugging function that should only be used inside assert statements.
+ * 
+ * move:              A 64-bit integer containing all the information about
+ *                    a single move.
+ * 
+ * return:            True if the move is valid. If the move is not valid, one
+ *                    of the internal asserts should fail.
+ */
+int validMove(uint64 move) {
+    int from = move & 0x3F;
+    int to = (move >> 6) & 0x3F;
+    int captured = (move >> 12) & 0xF;
+    int promoted = (move >> 16) & 0xF;
+    int flags = (move >> 20) & 0x1F;
+    assert(~MOVE_FLAGS & flags == 0);
+    if (flags & CAPTURE_FLAG) {
+        assert(!(flags & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
+        assert(captured >= WHITE_PAWN && captured <= BLACK_KING);
+        assert(captured != WHITE_KING && captured != BLACK_KING);
+    } else {
+        assert(captured == 0xF);
+    }
+    if (flags & PROMOTION_FLAG) {
+        assert(!(flags & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
+        if ((1ULL << from) & 0x00FF000000000000) {
+            assert((1ULL << to) & 0xFF00000000000000);
+        } else {
+            assert((1ULL << from) & 0x000000000000FF00);
+            assert((1ULL << to) & 0x00000000000000FF);
+        }
+        assert(promoted > WHITE_PAWN && promoted < BLACK_KING);
+        assert(promoted != WHITE_KING && promoted != BLACK_PAWN);
+    } else {
+        assert(promoted == 0xF);
+    }
+    if (flags & CASTLE_FLAG) {
+        assert(!(flags & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
+        assert(!(flags & (PAWN_START_FLAG | PROMOTION_FLAG)));
+        if (from == E1) {
+            assert(to == G1 || to == C1);
+        } else {
+            assert(from == E8);
+            assert(to == G8 || to == C8);
+        }
+    }
+    if (flags & EN_PASSANT_FLAG) {
+        assert(!(flags & (PAWN_START_FLAG | CAPTURE_FLAG)));
+        assert(!(flags & (CASTLE_FLAG | PROMOTION_FLAG)));
+        if ((1ULL << from) & 0x00000000FF000000) {
+            assert((1ULL << to) & 0x0000000000FF0000);
+        } else {
+            assert((1ULL << from) & 0x000000FF00000000);
+            assert((1ULL << to) & 0x0000FF0000000000);
+        }
+    }
+    if (flags & PAWN_START_FLAG) {
+        assert(!(flags & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
+        assert(!(flags & (CASTLE_FLAG | PROMOTION_FLAG)));
+        if ((1ULL << from) & 0x00FF000000000000) {
+            assert((1ULL << to) & 0x000000FF00000000);
+        } else {
+            assert((1ULL << from) & 0x000000000000FF00);
+            assert((1ULL << to) & 0x00000000FF000000);
         }
     }
     return 1;
