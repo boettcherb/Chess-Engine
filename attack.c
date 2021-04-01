@@ -1,5 +1,6 @@
 #include "attack.h"
 #include "defs.h"
+#include "magic.h"
 
 /*
  * Attack bitboards for knights and kings. If there is a king on D4, then you
@@ -117,19 +118,19 @@ uint64 getKnightAttacks(int square) {
  *                the left (getPawnAttacksLeft())
  */
 uint64 getWhitePawnAttacksRight(uint64 pawns) {
-    assert(pawns & 0xFF000000000000FF == 0);
+    assert((pawns & 0xFF000000000000FF) == 0);
     return (pawns << 9) & 0xFEFEFEFEFEFEFEFE;
 }
 uint64 getWhitePawnAttacksLeft(uint64 pawns) {
-    assert(pawns & 0xFF000000000000FF == 0);
+    assert((pawns & 0xFF000000000000FF) == 0);
     return (pawns << 7) & 0x7F7F7F7F7F7F7F7F;
 }
 uint64 getBlackPawnAttacksRight(uint64 pawns) {
-    assert(pawns & 0xFF000000000000FF == 0);
+    assert((pawns & 0xFF000000000000FF) == 0);
     return (pawns >> 9) & 0x7F7F7F7F7F7F7F7F;
 }
 uint64 getBlackPawnAttacksLeft(uint64 pawns) {
-    assert(pawns & 0xFF000000000000FF == 0);
+    assert((pawns & 0xFF000000000000FF) == 0);
     return (pawns >> 7) & 0xFEFEFEFEFEFEFEFE;
 }
 
@@ -221,7 +222,7 @@ uint64 getBishopAttacks(int square, uint64 allPieces) {
     assert(allPieces & (1ULL << square));
     uint64 blockers = allPieces & bishopBlockers[square];
     uint64 attackIndex = getBishopAttackIndex(blockers, square);
-    assert(attackIndex >= 0 && attackIndex < 512);
+    assert(attackIndex < 512);
     return bishopAttackTable[square][attackIndex];
 }
 uint64 getRookAttacks(int square, uint64 allPieces) {
@@ -229,7 +230,7 @@ uint64 getRookAttacks(int square, uint64 allPieces) {
     assert(allPieces & (1ULL << square));
     uint64 blockers = allPieces & rookBlockers[square];
     uint64 attackIndex = getRookAttackIndex(blockers, square);
-    assert(attackIndex >= 0 && attackIndex < 4096);
+    assert(attackIndex < 4096);
     return rookAttackTable[square][attackIndex];
 }
 uint64 getQueenAttacks(int square, uint64 allPieces) {

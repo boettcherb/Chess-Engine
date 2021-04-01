@@ -406,7 +406,7 @@ void initBishopAttackTable(void) {
             }
             uint64 key = blockers * bishopMagics[square];
             key >>= (64 - numBishopBlockers[square]);
-            assert(key >= 0 && key < 512);
+            assert(key < 512);
             uint64 attackBitboard = bishopAttacksSlow(square, blockers);
             bishopAttackTable[square][key] = attackBitboard;
         }
@@ -427,7 +427,7 @@ void initRookAttackTable(void) {
             }
             uint64 key = blockers * rookMagics[square];
             key >>= (64 - numRookBlockers[square]);
-            assert(key >= 0 && key < 4096);
+            assert(key < 4096);
             uint64 attackBitboard = rookAttacksSlow(square, blockers);
             rookAttackTable[square][key] = attackBitboard;
         }

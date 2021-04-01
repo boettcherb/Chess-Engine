@@ -50,4 +50,8 @@ typedef struct {
 
 void generateAllMoves(const Board* board, MoveList* list);
 
+#ifndef NDEBUG
+    int validMove(uint64 move);
+#endif
+
 #endif
