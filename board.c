@@ -98,3 +98,74 @@ int setBoardToFen(Board* board, const char* fen) {
     assert(checkBoard(board));
     return 1;
 }
+
+/*
+ * Remove the piece from the given square and update the given board's member
+ * variables to reflect the change.
+ *
+ * board:      The board that is being updated, passed in as a pointer. The
+ *             pointer must not be NULL.
+ * square:     The square index of the piece to be removed. The index must be
+ *             in the range [0-64) and the square must not be empty.
+ */
+static void clearPiece(Board* board, int square) {
+    assert(board != NULL && square >= 0 && square < 64);
+    assert(board->pieces[square] != NO_PIECE);
+    int piece = board->pieces[square];
+    uint64 clearMask = ~(1ULL << square);
+    board->pieceBitboards[piece] &= clearMask;
+    board->colorBitboards[pieceColor[piece]] &= clearMask;
+    board->colorBitboards[BOTH_COLORS] &= clearMask;
+    board->pieces[square] = NO_PIECE;
+}
+
+/*
+ * Add a piece to the given square and update the given board's member
+ * variables to reflect the change.
+ *
+ * board:      The board that is being updated, passed in as a pointer. The
+ *             pointer must not be NULL.
+ * square:     The index of the square where the piece will be added. The
+ *             index must be in the range [0-64) and the square must be empty.
+ * piece:      The piece to be added to the given square. This must be a valid
+ *             piece type.
+ */
+static void addPiece(Board* board, int square, int piece) {
+    assert(board != NULL && square >= 0 && square < 64);
+    assert(piece >= 0 && piece < NUM_PIECE_TYPES);
+    assert(board->pieces[square] == NO_PIECE);
+    uint64 setMask = 1ULL << square;
+    board->pieceBitboards[piece] |= setMask;
+    board->colorBitboards[pieceColor[piece]] |= setMask;
+    board->colorBitboards[BOTH_COLORS] |= setMask;
+    board->pieces[square] = piece;
+}
+
+/*
+ * Move a piece from the square 'from' to the square 'to' and update the given
+ * board's member variables to reflect the change.
+ *
+ * board:      The board that is being updated, passed in as a pointer. The
+ *             pointer must not be NULL.
+ * from:       The index of the square the piece started on. The index must be
+ *             in the range [0-64) and the square must not be empty.
+ * to:         The index of the square the piece will be moved to. The index
+ *             must be in the range [0-64) and the square must be empty.
+ */
+static void movePiece(Board* board, int from, int to) {
+    assert(board != NULL);
+    assert(from >= 0 && from < 64 && to >= 0 && to < 64);
+    assert(board->pieces[from] != NO_PIECE);
+    assert(board->pieces[to] == NO_PIECE);
+    int piece = board->pieces[from];
+    uint64 clearMask = ~(1ULL << from);
+    uint64 setMask = 1ULL << to;
+    board->pieceBitboards[piece] &= clearMask;
+    board->pieceBitboards[piece] |= setMask;
+    board->colorBitboards[pieceColor[piece]] &= clearMask;
+    board->colorBitboards[pieceColor[piece]] |= setMask;
+    board->colorBitboards[BOTH_COLORS] &= clearMask;
+    board->colorBitboards[BOTH_COLORS] |= setMask;
+    board->pieces[to] = piece;
+    board->pieces[from] = NO_PIECE;
+}
