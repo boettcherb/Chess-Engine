@@ -1,6 +1,7 @@
 #include "attack.h"
 #include "defs.h"
 #include "magic.h"
+#include "board.h"
 
 /*
  * Attack bitboards for knights and kings. If there is a king on D4, then you
@@ -238,4 +239,65 @@ uint64 getQueenAttacks(int square, uint64 allPieces) {
     assert(allPieces & (1ULL << square));
     return getBishopAttacks(square, allPieces) |
         getRookAttacks(square, allPieces);
+}
+
+/**
+ * Check to see if pieces of side 'side' are attacking any of the squares in
+ * the 'squares' bitboard. This method checks every piece of side 'side' and
+ * calls their respective attack functions. This function then checks to see
+ * if any of these attack bitboards overlap with the 'squares' bitboard. If
+ * so, one or more of the squares in the 'squares' bitboard are being attacked
+ * so the function returns 1.
+ * 
+ * board:       The current chess position. The board must be a valid chess
+ *              position. Passed in as a pointer.
+ * square:      A bitboard of squares that this function is checking for
+ *              attacks.
+ * side:        The color who could be attacking the squares in the 'squares'
+ *              bitboard. Must be either WHITE or BLACK.
+ * 
+ * return:      1 if any of the squares in the 'squares' bitboard are being
+ *              attacked. 0 otherwise.
+ */
+int squareAttacked(const Board* board, uint64 squares, int side) {
+    assert(checkBoard(board));
+    assert(side == WHITE || side == BLACK);
+    uint64 attacks = 0ULL;
+    uint64 knights, bishops, rooks, queens;
+    if (side == WHITE) {
+        attacks |= getKingAttacks(board->pieceBitboards[WHITE_KING]);
+        attacks |= getWhitePawnAttacksLeft(board->pieceBitboards[WHITE_PAWN]);
+        attacks |= getWhitePawnAttacksRight(board->pieceBitboards[WHITE_PAWN]);
+        knights = board->pieceBitboards[WHITE_KNIGHT];
+        bishops = board->pieceBitboards[WHITE_BISHOP];
+        rooks = board->pieceBitboards[WHITE_ROOK];
+        queens = board->pieceBitboards[WHITE_QUEEN];
+    }
+    else {
+        attacks |= getKingAttacks(board->pieceBitboards[BLACK_KING]);
+        attacks |= getBlackPawnAttacksLeft(board->pieceBitboards[BLACK_PAWN]);
+        attacks |= getBlackPawnAttacksRight(board->pieceBitboards[BLACK_PAWN]);
+        knights = board->pieceBitboards[BLACK_KNIGHT];
+        bishops = board->pieceBitboards[BLACK_BISHOP];
+        rooks = board->pieceBitboards[BLACK_ROOK];
+        queens = board->pieceBitboards[BLACK_QUEEN];
+    }
+    uint64 allPieces = board->colorBitboards[BOTH_COLORS];
+    while (knights) {
+        attacks |= getKnightAttacks(getLSB(knights));
+        knights &= knights - 1;
+    }
+    while (bishops) {
+        attacks |= getBishopAttacks(getLSB(bishops), allPieces);
+        bishops &= bishops - 1;
+    }
+    while (rooks) {
+        attacks |= getRookAttacks(getLSB(rooks), allPieces);
+        rooks &= rooks - 1;
+    }
+    while (queens) {
+        attacks |= getQueenAttacks(getLSB(queens), allPieces);
+        queens &= queens - 1;
+    }
+    return (attacks & squares) != 0ULL;
 }
