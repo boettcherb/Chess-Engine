@@ -4,15 +4,6 @@
 #include "defs.h"
 #include "board.h"
 
-#define MAX_GAME_MOVES 512
-
-#define MOVE_FLAGS      0x1F00000
-#define CAPTURE_FLAG    0x0100000
-#define PROMOTION_FLAG  0x0200000
-#define CASTLE_FLAG     0x0400000
-#define EN_PASSANT_FLAG 0x0800000
-#define PAWN_START_FLAG 0x1000000
-
 /******************************************************************************
 Each move in a MoveList is a 64-bit integer with the following information:
 0 0000 0000 0000 0000 0011 1111   6 bits for the 'from' square

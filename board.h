@@ -4,6 +4,20 @@
 
 #include "defs.h"
 
+/**
+ * A structure to hold information about moves that were already made. The
+ * board struct stores each move that was made to get to its current position
+ * in an array called history[]. Moves are placed in the history[] array in
+ * the makeMove() function. The undoMove() function accesses the last element
+ * of the history[] array in order to undo the previous move.
+ * 
+ * move:              A 64-bit integer containing most of the necessary
+ *                    information about the move.
+ */
+typedef struct {
+    uint64 move;
+} PreviousMove;
+
 /*
  * In this engine, a chessboard is represented using bitboards. Each bitboard
  * is a 64-bit number where the least significant bit (bit 0) represents square
@@ -21,7 +35,8 @@
  *                    square. This allows quick access of the piece type of a
  *                    given square and is also updated incrementally with the
  *                    piece bitboards.
- * sideToMove:        An integer that is either 0 (white) or 1 (black).
+ * sideToMove:        An integer that is either 0 (white) or 1 (black) denoting
+ *                    whose turn it is in the current position.
  * ply:               An integer holding the number of half moves made to get
  *                    to the current board position.
  */
@@ -31,6 +46,7 @@ typedef struct {
     signed char pieces[64];
     int sideToMove;
     int ply;
+    PreviousMove history[MAX_GAME_MOVES];
 } Board;
 
 void resetBoard(Board* board);
