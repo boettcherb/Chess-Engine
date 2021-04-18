@@ -51,10 +51,13 @@ typedef struct {
 
 void resetBoard(Board* board);
 int setBoardToFen(Board* board, const char* fen);
+int makeMove(Board* board, uint64 move);
+void undoMove(Board* board);
 
 // functions only used in debug mode. NDEBUG is included with <assert.h>
 #ifndef NDEBUG
     int checkBoard(const Board* board);
+    int validMove(uint64 move);
     void printPieces(const Board* board);
 #endif
 

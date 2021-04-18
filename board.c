@@ -1,5 +1,6 @@
 #include "board.h"
 #include "defs.h"
+#include "attack.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -168,4 +169,37 @@ static void movePiece(Board* board, int from, int to) {
     board->colorBitboards[BOTH_COLORS] |= setMask;
     board->pieces[to] = piece;
     board->pieces[from] = NO_PIECE;
+}
+
+int makeMove(Board* board, uint64 move) {
+    assert(checkBoard(board));
+    assert(validMove(move));
+    board->history[board->ply++].move = move;
+    int from = move & 0x3F;
+    int to = (move >> 6) & 0x3F;
+    if ((move & MOVE_FLAGS) == CAPTURE_FLAG) {
+        clearPiece(board, to);
+    }
+    movePiece(board, from, to);
+    assert(checkBoard(board));
+    int king = board->sideToMove == WHITE ? WHITE_KING : BLACK_KING;
+    board->sideToMove = !board->sideToMove;
+    if (!squareAttacked(board, board->pieceBitboards[king], board->sideToMove)) {
+        return 1;
+    }
+    undoMove(board);
+    return 0;
+}
+
+void undoMove(Board* board) {
+    assert(checkBoard(board));
+    assert(board->ply > 0);
+    uint64 move = board->history[--board->ply].move;
+    int from = move & 0x3F;
+    int to = (move >> 6) & 0x3F;
+    movePiece(board, to, from);
+    if ((move & MOVE_FLAGS) == CAPTURE_FLAG) {
+        addPiece(board, to, (move >> 12) & 0xF);
+    }
+    assert(checkBoard(board));
 }
