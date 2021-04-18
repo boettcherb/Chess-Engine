@@ -124,17 +124,15 @@ int validMove(uint64 move) {
     int to = (move >> 6) & 0x3F;
     int captured = (move >> 12) & 0xF;
     int promoted = (move >> 16) & 0xF;
-    int flags = (move >> 20) & 0x1F;
-    assert((~MOVE_FLAGS & flags) == 0);
-    if (flags & CAPTURE_FLAG) {
-        assert(!(flags & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
+    if (move & CAPTURE_FLAG) {
+        assert(!(move & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
         assert(captured >= WHITE_PAWN && captured <= BLACK_KING);
         assert(captured != WHITE_KING && captured != BLACK_KING);
     } else {
         assert(captured == 0xF);
     }
-    if (flags & PROMOTION_FLAG) {
-        assert(!(flags & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
+    if (move & PROMOTION_FLAG) {
+        assert(!(move & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
         if ((1ULL << from) & 0x00FF000000000000) {
             assert((1ULL << to) & 0xFF00000000000000);
         } else {
@@ -146,9 +144,9 @@ int validMove(uint64 move) {
     } else {
         assert(promoted == 0xF);
     }
-    if (flags & CASTLE_FLAG) {
-        assert(!(flags & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
-        assert(!(flags & (PAWN_START_FLAG | PROMOTION_FLAG)));
+    if (move & CASTLE_FLAG) {
+        assert(!(move & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
+        assert(!(move & (PAWN_START_FLAG | PROMOTION_FLAG)));
         if (from == E1) {
             assert(to == G1 || to == C1);
         } else {
@@ -156,9 +154,9 @@ int validMove(uint64 move) {
             assert(to == G8 || to == C8);
         }
     }
-    if (flags & EN_PASSANT_FLAG) {
-        assert(!(flags & (PAWN_START_FLAG | CAPTURE_FLAG)));
-        assert(!(flags & (CASTLE_FLAG | PROMOTION_FLAG)));
+    if (move & EN_PASSANT_FLAG) {
+        assert(!(move & (PAWN_START_FLAG | CAPTURE_FLAG)));
+        assert(!(move & (CASTLE_FLAG | PROMOTION_FLAG)));
         if ((1ULL << from) & 0x00000000FF000000) {
             assert((1ULL << to) & 0x0000000000FF0000);
         } else {
@@ -166,9 +164,9 @@ int validMove(uint64 move) {
             assert((1ULL << to) & 0x0000FF0000000000);
         }
     }
-    if (flags & PAWN_START_FLAG) {
-        assert(!(flags & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
-        assert(!(flags & (CASTLE_FLAG | PROMOTION_FLAG)));
+    if (move & PAWN_START_FLAG) {
+        assert(!(move & (EN_PASSANT_FLAG | CAPTURE_FLAG)));
+        assert(!(move & (CASTLE_FLAG | PROMOTION_FLAG)));
         if ((1ULL << from) & 0x00FF000000000000) {
             assert((1ULL << to) & 0x000000FF00000000);
         } else {

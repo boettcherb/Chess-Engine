@@ -21,9 +21,9 @@
  */
 static uint64 getMove(int from, int to, int captured, int promoted, int flags) {
     assert(from >= 0 && from < 64 && to >= 0 && to < 64);
-    assert((~flags & MOVE_FLAGS) == 0);
+    assert((flags & ~MOVE_FLAGS) == 0);
     uint64 move = from | (to << 6) | ((captured & 0xF) << 12);
-    return move | ((promoted & 0xF) << 16) | (flags << 20);
+    return move | ((promoted & 0xF) << 16) | flags;
 }
 
 /* Add the given move to the movelist.
