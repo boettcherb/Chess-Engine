@@ -79,38 +79,47 @@ uint64 attacks, int from) {
 void generateAllMoves(const Board* board, MoveList* list) {
     assert(board != NULL && list != NULL && checkBoard(board));
     list->numMoves = 0;
+    uint64 samePieces, allPieces = board->colorBitboards[BOTH_COLORS];
+    uint64 kings, knights, rooks, bishops, queens;
     if (board->sideToMove == WHITE) {
-        // king
-        int from = getLSB(board->pieceBitboards[WHITE_KING]);
-        uint64 attacks = getKingAttacks(board->pieceBitboards[WHITE_KING]);
-        attacks &= ~board->colorBitboards[WHITE];
-        generatePieceMoves(board, list, attacks, from);
-
-        // knight
-        uint64 knights = board->pieceBitboards[WHITE_KNIGHT];
-        while (knights) {
-            from = getLSB(knights);
-            uint64 attacks = getKnightAttacks(from);
-            attacks &= ~board->colorBitboards[WHITE];
-            generatePieceMoves(board, list, attacks, from);
-            knights &= knights - 1;
-        }
+        kings = board->pieceBitboards[WHITE_KING];
+        knights = board->pieceBitboards[WHITE_KNIGHT];
+        rooks = board->pieceBitboards[WHITE_ROOK];
+        bishops = board->pieceBitboards[WHITE_BISHOP];
+        queens = board->pieceBitboards[WHITE_QUEEN];
+        samePieces = board->colorBitboards[WHITE];
+    } else {
+        kings = board->pieceBitboards[BLACK_KING];
+        knights = board->pieceBitboards[BLACK_KNIGHT];
+        rooks = board->pieceBitboards[BLACK_ROOK];
+        bishops = board->pieceBitboards[BLACK_BISHOP];
+        queens = board->pieceBitboards[BLACK_QUEEN];
+        samePieces = board->colorBitboards[BLACK];
     }
-    else {
-        // king
-        int from = getLSB(board->pieceBitboards[BLACK_KING]);
-        uint64 attacks = getKingAttacks(board->pieceBitboards[BLACK_KING]);
-        attacks &= ~board->colorBitboards[BLACK];
-        generatePieceMoves(board, list, attacks, from);
-
-        // knight
-        uint64 knights = board->pieceBitboards[BLACK_KNIGHT];
-        while (knights) {
-            int from = getLSB(knights);
-            uint64 attacks = getKnightAttacks(from);
-            attacks &= ~board->colorBitboards[BLACK];
-            generatePieceMoves(board, list, attacks, from);
-            knights &= knights - 1;
-        }
+    uint64 attacks = getKingAttacks(kings);
+    generatePieceMoves(board, list, attacks & ~samePieces, getLSB(kings));
+    while (knights) {
+        int knight = getLSB(knights);
+        uint64 attacks = getKnightAttacks(knight);
+        generatePieceMoves(board, list, attacks & ~samePieces, knight);
+        knights &= knights - 1;
+    }
+    while (rooks) {
+        int rook = getLSB(rooks);
+        uint64 attacks = getRookAttacks(rook, allPieces);
+        generatePieceMoves(board, list, attacks & ~samePieces, rook);
+        rooks &= rooks - 1;
+    }
+    while (bishops) {
+        int bishop = getLSB(bishops);
+        uint64 attacks = getBishopAttacks(bishop, allPieces);
+        generatePieceMoves(board, list, attacks & ~samePieces, bishop);
+        bishops &= bishops - 1;
+    }
+    while (queens) {
+        int queen = getLSB(queens);
+        uint64 attacks = getQueenAttacks(queen, allPieces);
+        generatePieceMoves(board, list, attacks & ~samePieces, queen);
+        queens &= queens - 1;
     }
 }
