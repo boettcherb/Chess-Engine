@@ -194,6 +194,7 @@ int makeMove(Board* board, uint64 move) {
 void undoMove(Board* board) {
     assert(checkBoard(board));
     assert(board->ply > 0);
+    board->sideToMove = !board->sideToMove;
     uint64 move = board->history[--board->ply].move;
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;

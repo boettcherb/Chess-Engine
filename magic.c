@@ -460,7 +460,6 @@ int getBishopAttackIndex(int square, uint64 blockers) {
 }
 int getRookAttackIndex(int square, uint64 blockers) {
     assert(square >= 0 && square < 64);
-    assert(!(~(rookAttacks[square] & 0x007E7E7E7E7E7E00) & blockers));
     int shift = 64 - numRookBlockers[square];
     int index = (blockers * rookMagics[square]) >> shift;
     assert(index >= 0 && index < (1 << numRookBlockers[square]));
