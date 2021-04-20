@@ -104,6 +104,20 @@ int checkBoard(const Board* board) {
             boardCopy.colorBitboards[BOTH_COLORS] |= (1ULL << square);
         }
     }
+    // check to make sure the en passant square is valid
+    if (board->enPassantSquare != 0ULL) {
+        int sq = getLSB(board->enPassantSquare);
+        assert(board->pieces[sq] == NO_PIECE);
+        if (board->sideToMove == WHITE) {
+            // en passant square was made by a black pawn
+            assert(!(board->enPassantSquare & 0xFFFF00FFFFFFFFFF));
+            assert(board->pieces[sq - 8] == BLACK_PAWN);
+        } else {
+            // en passant square was made by a white pawn
+            assert(!(board->enPassantSquare & 0xFFFFFFFFFF00FFFF));
+            assert(board->pieces[sq + 8] == WHITE_PAWN);
+        }
+    }
     return 1;
 }
 

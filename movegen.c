@@ -37,6 +37,102 @@ static void addMove(int move, MoveList* list) {
     list->moves[list->numMoves++] = move;
 }
 
+static void addPawnMove(const Board* board, MoveList* list, int from, int to,
+int captured, int flags) {
+    if ((1ULL << to) & 0xFF000000000000FF) {
+        int side = board->sideToMove;
+        flags |= PROMOTION_FLAG;
+        addMove(getMove(from, to, captured, pieces[side][KNIGHT], flags), list);
+        addMove(getMove(from, to, captured, pieces[side][BISHOP], flags), list);
+        addMove(getMove(from, to, captured, pieces[side][ROOK], flags), list);
+        addMove(getMove(from, to, captured, pieces[side][QUEEN], flags), list);
+    } else {
+        addMove(getMove(from, to, captured, NO_PIECE, flags), list);
+    }
+}
+
+static void generateWhitePawnMoves(const Board* board, MoveList* list) {
+    uint64 pawns = board->pieceBitboards[WHITE_PAWN];
+    uint64 allPieces = board->colorBitboards[BOTH_COLORS];
+    uint64 opponentPieces = board->colorBitboards[BLACK];
+    uint64 pawnMoves = (pawns << 8) & ~allPieces;
+    uint64 pawnStarts = ((pawnMoves & 0x0000000000FF0000) << 8) & ~allPieces;
+    uint64 leftAttacks = getWhitePawnAttacksLeft(pawns) & opponentPieces;
+    uint64 rightAttacks = getWhitePawnAttacksRight(pawns) & opponentPieces;
+    while (pawnMoves) {
+        int to = getLSB(pawnMoves);
+        addPawnMove(board, list, to - 8, to, NO_PIECE, 0);
+        pawnMoves &= pawnMoves - 1;
+    }
+    while (pawnStarts) {
+        int to = getLSB(pawnStarts);
+        addMove(getMove(to - 16, to, NO_PIECE, NO_PIECE, PAWN_START_FLAG), list);
+        pawnStarts &= pawnStarts - 1;
+    }
+    while (leftAttacks) {
+        int to = getLSB(leftAttacks);
+        addPawnMove(board, list, to - 7, to, board->pieces[to], CAPTURE_FLAG);
+        leftAttacks &= leftAttacks - 1;
+    }
+    while (rightAttacks) {
+        int to  = getLSB(rightAttacks);
+        addPawnMove(board, list, to - 9, to, board->pieces[to], CAPTURE_FLAG);
+        rightAttacks &= rightAttacks - 1;
+    }
+    if (board->enPassantSquare != 0ULL) {
+        int square = getLSB(board->enPassantSquare);
+        if (board->pieces[square - 7] == WHITE_PAWN) {
+            addMove(getMove(square - 7, square, NO_PIECE,
+                NO_PIECE, EN_PASSANT_FLAG), list);
+        }
+        if (board->pieces[square - 9] == WHITE_PAWN) {
+            addMove(getMove(square - 9, square, NO_PIECE,
+                NO_PIECE, EN_PASSANT_FLAG), list);
+        }
+    }
+}
+
+static void generateBlackPawnMoves(const Board* board, MoveList* list) {
+    uint64 pawns = board->pieceBitboards[WHITE_PAWN];
+    uint64 allPieces = board->colorBitboards[BOTH_COLORS];
+    uint64 opponentPieces = board->colorBitboards[WHITE];
+    uint64 pawnMoves = (pawns >> 8) & ~allPieces;
+    uint64 pawnStarts = ((pawnMoves & 0x0000FF0000000000) >> 8) & ~allPieces;
+    uint64 leftAttacks = getBlackPawnAttacksLeft(pawns) & opponentPieces;
+    uint64 rightAttacks = getBlackPawnAttacksRight(pawns) & opponentPieces;
+    while (pawnMoves) {
+        int to = getLSB(pawnMoves);
+        addPawnMove(board, list, to + 8, to, NO_PIECE, 0);
+        pawnMoves &= pawnMoves - 1;
+    }
+    while (pawnStarts) {
+        int to = getLSB(pawnStarts);
+        addMove(getMove(to + 16, to, NO_PIECE, NO_PIECE, PAWN_START_FLAG), list);
+        pawnStarts &= pawnStarts - 1;
+    }
+    while (leftAttacks) {
+        int to = getLSB(leftAttacks);
+        addPawnMove(board, list, to + 7, to, board->pieces[to], CAPTURE_FLAG);
+        leftAttacks &= leftAttacks - 1;
+    }
+    while (rightAttacks) {
+        int to  = getLSB(rightAttacks);
+        addPawnMove(board, list, to + 9, to, board->pieces[to], CAPTURE_FLAG);
+        rightAttacks &= rightAttacks - 1;
+    }
+    if (board->enPassantSquare != 0ULL) {
+        int square = getLSB(board->enPassantSquare);
+        if (board->pieces[square + 7] == BLACK_PAWN) {
+            addMove(getMove(square + 7, square, NO_PIECE,
+                NO_PIECE, EN_PASSANT_FLAG), list);
+        }
+        if (board->pieces[square + 9] == BLACK_PAWN) {
+            addMove(getMove(square + 9, square, NO_PIECE,
+                NO_PIECE, EN_PASSANT_FLAG), list);
+        }
+    }
+}
+
 /* Given the starting position of a piece and its attack bitboard, generate all
  * possible moves for that piece and add them to the movelist. This function
  * can be used for all pieces except pawns (pawns have multiple special moves
@@ -82,6 +178,7 @@ void generateAllMoves(const Board* board, MoveList* list) {
     uint64 samePieces, allPieces = board->colorBitboards[BOTH_COLORS];
     uint64 kings, knights, rooks, bishops, queens;
     if (board->sideToMove == WHITE) {
+        generateWhitePawnMoves(board, list);
         kings = board->pieceBitboards[WHITE_KING];
         knights = board->pieceBitboards[WHITE_KNIGHT];
         rooks = board->pieceBitboards[WHITE_ROOK];
@@ -89,6 +186,7 @@ void generateAllMoves(const Board* board, MoveList* list) {
         queens = board->pieceBitboards[WHITE_QUEEN];
         samePieces = board->colorBitboards[WHITE];
     } else {
+        generateBlackPawnMoves(board, list);
         kings = board->pieceBitboards[BLACK_KING];
         knights = board->pieceBitboards[BLACK_KNIGHT];
         rooks = board->pieceBitboards[BLACK_ROOK];

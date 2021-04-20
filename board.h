@@ -13,9 +13,12 @@
  * 
  * move:              A 64-bit integer containing most of the necessary
  *                    information about the move.
+ * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
+ *                    current side to move could attack by the en passant rule.
  */
 typedef struct {
     uint64 move;
+    uint64 enPassantSquare;
 } PreviousMove;
 
 /*
@@ -39,6 +42,10 @@ typedef struct {
  *                    whose turn it is in the current position.
  * ply:               An integer holding the number of half moves made to get
  *                    to the current board position.
+ * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
+ *                    current side to move could attack by the en passant rule.
+ * history:           An array of PreviousMove structs that hold info about all
+ *                    the moves made to get to the board's current position.
  */
 typedef struct {
     uint64 pieceBitboards[NUM_PIECE_TYPES];
@@ -46,6 +53,7 @@ typedef struct {
     signed char pieces[64];
     int sideToMove;
     int ply;
+    uint64 enPassantSquare;
     PreviousMove history[MAX_GAME_MOVES];
 } Board;
 
