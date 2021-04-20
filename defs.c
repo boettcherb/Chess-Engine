@@ -5,6 +5,11 @@ const int pieceColor[NUM_PIECE_TYPES] = {
     BLACK, BLACK, BLACK, BLACK, BLACK, BLACK,
 };
 
+const int pieces[BOTH_COLORS][NUM_PIECE_TYPES] = {
+    { WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING },
+    { BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING },
+};
+
 /*
  * Retrieve the index of the given bitboard's least significant bit. Ex: 
  * getLSB(0x1) = 0, getLSB(0x4) = 2, getLSB(0xC00) = 10. There is undefined
