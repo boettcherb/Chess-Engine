@@ -214,7 +214,7 @@ void printPieces(const Board* board) {
 
 // print the given bitboard. an 'X' will mark a 1 and a '-' will mark a 0
 // print Rank 8 first so that it appears at the top
-static void printBitboard(uint64 bitboard) {
+void printBitboard(uint64 bitboard) {
     for (int i = 56; i >= 0; i -= 8) {
         for (int j = 0; j < 8; ++j) {
             printf("%c ", (bitboard & (1ULL << (i + j))) ? 'X' : '-');
@@ -286,6 +286,6 @@ void getMoveString(int move, char* moveString) {
     getSquareString((move >> 6) & 0x3F, toSquareString);
     int promotedPiece = (move >> 16) & 0xF;
     const char* pieceChar = "PNBRQKpnbrqk";
-    char promotedChar = promotedPiece == NO_PIECE ? '\0' : pieceChar[promotedPiece];
+    char promotedChar = promotedPiece == 0xF ? '\0' : pieceChar[promotedPiece];
     sprintf(moveString, "%s%s%c", fromSquareString, toSquareString, promotedChar);
 }

@@ -11,12 +11,13 @@ typedef unsigned long long uint64;
 #define NUM_PIECE_TYPES 12
 #define NO_PIECE -1
 
-#define MOVE_FLAGS      0x1F00000
-#define CAPTURE_FLAG    0x0100000
-#define PROMOTION_FLAG  0x0200000
-#define CASTLE_FLAG     0x0400000
-#define EN_PASSANT_FLAG 0x0800000
-#define PAWN_START_FLAG 0x1000000
+#define MOVE_FLAGS                 0x1F00000
+#define CAPTURE_FLAG               0x0100000
+#define PROMOTION_FLAG             0x0200000
+#define CAPTURE_AND_PROMOTION_FLAG 0x0300000
+#define CASTLE_FLAG                0x0400000
+#define EN_PASSANT_FLAG            0x0800000
+#define PAWN_START_FLAG            0x1000000
 
 enum Piece {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,

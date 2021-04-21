@@ -69,6 +69,7 @@ void undoMove(Board* board);
     void printPieces(const Board* board);
     void printBoard(const Board* board);
     void getMoveString(int move, char* moveString);
+    void printBitboard(uint64 bitboard);
 #endif
 
 #endif

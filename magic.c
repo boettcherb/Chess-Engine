@@ -384,6 +384,63 @@ const uint64 bishopMagics[64] = {
 };
 
 /*
+ * Sliding piece blockers. A "blocker" is a piece that limits the movement of a
+ * sliding piece. A blocker must be on the same diagonal as a bishop and the
+ * same rank/file of a rook. Pieces on the edge of the board are not blockers.
+ * For example, a rook on D4 is "blocked" by a piece on C4 and B4, but not by a
+ * piece on A4. The rook can "see" A4 regardless of whether a piece is there.
+ * There is no queenBlockers[] because a queen is just the combination of a 
+ * rook and bishop.
+ * Remember: bit 0 = A1, bit 1 = B1, ... , bit 62 = G8, bit 63 = H8.
+ * 
+ *    Ex: bishopBlockers[D4]                      Ex: rookBlockers[D4]
+ *       0 0 0 0 0 0 0 0               |            0 0 0 0 0 0 0 0
+ *       0 0 0 0 0 0 1 0               |            0 0 0 1 0 0 0 0
+ *       0 1 0 0 0 1 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 1 0 1 0 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 0 0 0 0 0 0               |            0 1 1 0 1 1 1 0
+ *       0 0 1 0 1 0 0 0               |            0 0 0 1 0 0 0 0
+ *       0 1 0 0 0 1 0 0               |            0 0 0 1 0 0 0 0
+ *       0 0 0 0 0 0 0 0               |            0 0 0 0 0 0 0 0
+ */
+const uint64 bishopBlockers[64] = {
+    0x0040201008040200, 0x0000402010080400, 0x0000004020100A00, 0x0000000040221400,
+    0x0000000002442800, 0x0000000204085000, 0x0000020408102000, 0x0002040810204000,
+    0x0020100804020000, 0x0040201008040000, 0x00004020100A0000, 0x0000004022140000,
+    0x0000000244280000, 0x0000020408500000, 0x0002040810200000, 0x0004081020400000,
+    0x0010080402000200, 0x0020100804000400, 0x004020100A000A00, 0x0000402214001400,
+    0x0000024428002800, 0x0002040850005000, 0x0004081020002000, 0x0008102040004000,
+    0x0008040200020400, 0x0010080400040800, 0x0020100A000A1000, 0x0040221400142200,
+    0x0002442800284400, 0x0004085000500800, 0x0008102000201000, 0x0010204000402000,
+    0x0004020002040800, 0x0008040004081000, 0x00100A000A102000, 0x0022140014224000,
+    0x0044280028440200, 0x0008500050080400, 0x0010200020100800, 0x0020400040201000,
+    0x0002000204081000, 0x0004000408102000, 0x000A000A10204000, 0x0014001422400000,
+    0x0028002844020000, 0x0050005008040200, 0x0020002010080400, 0x0040004020100800,
+    0x0000020408102000, 0x0000040810204000, 0x00000A1020400000, 0x0000142240000000,
+    0x0000284402000000, 0x0000500804020000, 0x0000201008040200, 0x0000402010080400,
+    0x0002040810204000, 0x0004081020400000, 0x000A102040000000, 0x0014224000000000,
+    0x0028440200000000, 0x0050080402000000, 0x0020100804020000, 0x0040201008040200,
+};
+const uint64 rookBlockers[64] = {
+    0x000101010101017E, 0x000202020202027C, 0x000404040404047A, 0x0008080808080876,
+    0x001010101010106E, 0x002020202020205E, 0x004040404040403E, 0x008080808080807E,
+    0x0001010101017E00, 0x0002020202027C00, 0x0004040404047A00, 0x0008080808087600,
+    0x0010101010106E00, 0x0020202020205E00, 0x0040404040403E00, 0x0080808080807E00,
+    0x00010101017E0100, 0x00020202027C0200, 0x00040404047A0400, 0x0008080808760800,
+    0x00101010106E1000, 0x00202020205E2000, 0x00404040403E4000, 0x00808080807E8000,
+    0x000101017E010100, 0x000202027C020200, 0x000404047A040400, 0x0008080876080800,
+    0x001010106E101000, 0x002020205E202000, 0x004040403E404000, 0x008080807E808000,
+    0x0001017E01010100, 0x0002027C02020200, 0x0004047A04040400, 0x0008087608080800,
+    0x0010106E10101000, 0x0020205E20202000, 0x0040403E40404000, 0x0080807E80808000,
+    0x00017E0101010100, 0x00027C0202020200, 0x00047A0404040400, 0x0008760808080800,
+    0x00106E1010101000, 0x00205E2020202000, 0x00403E4040404000, 0x00807E8080808000,
+    0x007E010101010100, 0x007C020202020200, 0x007A040404040400, 0x0076080808080800,
+    0x006E101010101000, 0x005E202020202000, 0x003E404040404000, 0x007E808080808000,
+    0x7E01010101010100, 0x7C02020202020200, 0x7A04040404040400, 0x7608080808080800,
+    0x6E10101010101000, 0x5E20202020202000, 0x3E40404040404000, 0x7E80808080808000,
+};
+
+/*
  * Initialize the bishop and rook attack tables. In these functions, every
  * possible blocker bitboard is generated for every square, and the functions
  * getBishopAttacksSlow() and getRookAttacksSlow() are used to generate an
@@ -395,7 +452,7 @@ void initBishopAttackTable(void) {
     for (int square = 0; square < 64; ++square) {
         int numBlockerBoards = 1 << numBishopBlockers[square];
         for (int blockerIdx = 0; blockerIdx < numBlockerBoards; ++blockerIdx) {
-            uint64 innerAttacks = bishopAttacks[square] & 0x007E7E7E7E7E7E00;
+            uint64 innerAttacks = bishopBlockers[square];
             uint64 blockers = 0ULL;
             for (int i = 0; innerAttacks; i++) {
                 int bitPos = getLSB(innerAttacks);
@@ -416,7 +473,7 @@ void initRookAttackTable(void) {
     for (int square = 0; square < 64; ++square) {
         int numBlockerBoards = 1 << numRookBlockers[square];
         for (int blockerIdx = 0; blockerIdx < numBlockerBoards; ++blockerIdx) {
-            uint64 innerAttacks = rookAttacks[square] & 0x007E7E7E7E7E7E00;
+            uint64 innerAttacks = rookBlockers[square];
             uint64 blockers = 0ULL;
             for (int i = 0; innerAttacks; i++) {
                 int bitPos = getLSB(innerAttacks);

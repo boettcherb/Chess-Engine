@@ -81,11 +81,11 @@ static void generateWhitePawnMoves(const Board* board, MoveList* list) {
     }
     if (board->enPassantSquare != 0ULL) {
         int square = getLSB(board->enPassantSquare);
-        if (board->pieces[square - 7] == WHITE_PAWN) {
+        if (square != 47 && board->pieces[square - 7] == WHITE_PAWN) {
             addMove(getMove(square - 7, square, NO_PIECE,
                 NO_PIECE, EN_PASSANT_FLAG), list);
         }
-        if (board->pieces[square - 9] == WHITE_PAWN) {
+        if (square != 40 && board->pieces[square - 9] == WHITE_PAWN) {
             addMove(getMove(square - 9, square, NO_PIECE,
                 NO_PIECE, EN_PASSANT_FLAG), list);
         }
@@ -93,7 +93,7 @@ static void generateWhitePawnMoves(const Board* board, MoveList* list) {
 }
 
 static void generateBlackPawnMoves(const Board* board, MoveList* list) {
-    uint64 pawns = board->pieceBitboards[WHITE_PAWN];
+    uint64 pawns = board->pieceBitboards[BLACK_PAWN];
     uint64 allPieces = board->colorBitboards[BOTH_COLORS];
     uint64 opponentPieces = board->colorBitboards[WHITE];
     uint64 pawnMoves = (pawns >> 8) & ~allPieces;
@@ -122,11 +122,11 @@ static void generateBlackPawnMoves(const Board* board, MoveList* list) {
     }
     if (board->enPassantSquare != 0ULL) {
         int square = getLSB(board->enPassantSquare);
-        if (board->pieces[square + 7] == BLACK_PAWN) {
+        if (square != 16 && board->pieces[square + 7] == BLACK_PAWN) {
             addMove(getMove(square + 7, square, NO_PIECE,
                 NO_PIECE, EN_PASSANT_FLAG), list);
         }
-        if (board->pieces[square + 9] == BLACK_PAWN) {
+        if (square != 23 && board->pieces[square + 9] == BLACK_PAWN) {
             addMove(getMove(square + 9, square, NO_PIECE,
                 NO_PIECE, EN_PASSANT_FLAG), list);
         }
