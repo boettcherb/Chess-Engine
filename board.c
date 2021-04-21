@@ -144,7 +144,8 @@ static void addPiece(Board* board, int square, int piece) {
 
 /*
  * Move a piece from the square 'from' to the square 'to' and update the given
- * board's member variables to reflect the change.
+ * board's pieceBitboards, colorBitboards, and pieces arrays to reflect the
+ * change.
  *
  * board:      The board that is being updated, passed in as a pointer. The
  *             pointer must not be NULL.
@@ -171,6 +172,23 @@ static void movePiece(Board* board, int from, int to) {
     board->pieces[from] = NO_PIECE;
 }
 
+/*
+ * Make a move on the chessboard and update the board's member variables. The
+ * function movePiece() is called as a part of this function. This function also
+ * takes care of captured pieces, promoted pieces, casting, en passant, the
+ * fifty move rule, repetition, and anything else related to making a move on
+ * the chess board. This is the function that will be called by the alpha-beta
+ * algorithm to search for the best move and when the user makes a move in the
+ * chess GUI.
+ * 
+ * board:         The board that is being updated. The board must be a valid
+ *                chess position.
+ * move:          The move that this function is making. Passed in as a 64-bit
+ *                integer containing all the necessary information.
+ * 
+ * return:        1 if the move that was made was a legal move (did not leave
+ *                the king in check), 0 if the move was illegal.
+ */
 int makeMove(Board* board, uint64 move) {
     assert(checkBoard(board));
     assert(validMove(move));
@@ -208,6 +226,17 @@ int makeMove(Board* board, uint64 move) {
     return 0;
 }
 
+/*
+ * Undo the last move that was made on the given board. makeMove() must have
+ * been called at least once on this board before this function can be called.
+ * Retrieve information about the last move that was made by accessing the
+ * board's history array and reset the board's member variables to their
+ * previous state. This function is also used by the alpha-beta algorithm to
+ * return to a lower depth, allowing other move paths to be explored.
+ * 
+ * board:      The board that is being updated. Must be a valid board position
+ *             with a ply of at least 1.
+ */
 void undoMove(Board* board) {
     assert(checkBoard(board));
     assert(board->ply > 0);

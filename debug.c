@@ -121,7 +121,8 @@ int checkBoard(const Board* board) {
     return 1;
 }
 
-/* Check the given move to make sure it is valid. Each move has 5 parts: the
+/* 
+ * Check the given move to make sure it is valid. Each move has 5 parts: the
  * 'from' square, the 'to' square, the captured piece, the promoted piece, and
  * the move flags. Check for discrepencies such as the captured piece being a
  * king or the promotion flag and castle flag both being set. This is a
@@ -212,8 +213,14 @@ void printPieces(const Board* board) {
     }
 }
 
-// print the given bitboard. an 'X' will mark a 1 and a '-' will mark a 0
-// print Rank 8 first so that it appears at the top
+/*
+ * Print the given bitboard to the console. Print an 'X' to mark a piece and
+ * a '-' to mark an empty space. We want to print the board so that a1 is in
+ * the bottom left and h8 is in the top right so that it is as readable as
+ * possible.
+ * 
+ * bitboard:      A 64-bit bitboard to be printed to the console. 
+ */
 void printBitboard(uint64 bitboard) {
     for (int i = 56; i >= 0; i -= 8) {
         for (int j = 0; j < 8; ++j) {
@@ -223,8 +230,17 @@ void printBitboard(uint64 bitboard) {
     }
 }
 
+/*
+ * Print every piece of information relating to the given board (except the
+ * history array). Print every piece bitboard, the color bitboards, the pieces
+ * array, and every other member variable to the console so that the user can
+ * see everything.
+ *
+ * board:     The board struct to be printed to the screen. Passed in as a
+ *            pointer which must not be NULL.
+ */
 void printBoard(const Board* board) {
-    assert(board);
+    assert(board != NULL);
     puts("============================================");
     printf("side to move: %c\n", board->sideToMove == WHITE ? 'w' : 'b');
     puts("pieces:");
@@ -265,27 +281,31 @@ void printBoard(const Board* board) {
     //putchar(board->castlePermissions & CASTLE_QUEENSIDE_WHITE ? 'Q' : '-');
     //putchar(board->castlePermissions & CASTLE_KINGSIDE_BLACK ? 'k' : '-');
     //putchar(board->castlePermissions & CASTLE_QUEENSIDE_BLACK ? 'q' : '-');
-    //puts("\nen passant square:");
-    //printBitboard(board->enPassantSquare);
+    puts("\nen passant square:");
+    printBitboard(board->enPassantSquare);
     //printf("fifty move count: %d\n", board->fiftyMoveCount);
     printf("ply: %d\n", board->ply);
     puts("============================================");
 }
 
-static void getSquareString(int square, char* squareString) {
-    assert(squareString && square >= 0 && square < 64);
-    squareString[0] = square % 8 + 'a';
-    squareString[1] = square / 8 + '1';
-    squareString[2] = 0;
-}
-
-void getMoveString(int move, char* moveString) {
+/*
+ * Given a move on the chessboard, fill the 'moveString' parameter with the
+ * text version of the move. For example, if the 'from' square is 8 (a2) and
+ * the 'to' square is 24 (a4), the moveString will be "a2a4". Also, if the move
+ * results in a promotion, append the letter of the promoted piece to the move
+ * string. For example: "a7a8Q".
+ * 
+ * move:        A 64-bit integer with all the information of the move.
+ * moveString:  A string where the text-version of the move will be placed. The
+ *              string must be at least 6 chars long.
+ */
+void getMoveString(uint64 move, char* moveString) {
     assert(validMove(move));
-    char fromSquareString[3], toSquareString[3];
-    getSquareString(move & 0x3F, fromSquareString);
-    getSquareString((move >> 6) & 0x3F, toSquareString);
-    int promotedPiece = (move >> 16) & 0xF;
-    const char* pieceChar = "PNBRQKpnbrqk";
-    char promotedChar = promotedPiece == 0xF ? '\0' : pieceChar[promotedPiece];
-    sprintf(moveString, "%s%s%c", fromSquareString, toSquareString, promotedChar);
+    const char* pieceChar = "PNBRQKpnbrqk\0\0\0\0\0";
+    moveString[0] = (move & 0x3F) % 8 + 'a';
+    moveString[1] = (move & 0x3F) / 8 + '1';
+    moveString[2] = ((move >> 6) & 0x3F) % 8 + 'a';
+    moveString[3] = ((move >> 6) & 0x3F) / 8 + '1';
+    moveString[4] = pieceChar[(move >> 16) & 0xF];
+    moveString[5] = 0;
 }

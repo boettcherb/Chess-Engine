@@ -191,7 +191,7 @@ uint64 getQueenAttacks(int square, uint64 allPieces) {
         getRookAttacks(square, allPieces);
 }
 
-/**
+/*
  * Check to see if pieces of side 'side' are attacking any of the squares in
  * the 'squares' bitboard. This method checks every piece of side 'side' and
  * calls their respective attack functions. This function then checks to see

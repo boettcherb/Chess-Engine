@@ -3,7 +3,8 @@
 #include "board.h"
 #include "attack.h"
 
-/* Assemble all the parts of a move into a single 64-bit integer. See movegen.h
+/* 
+ * Assemble all the parts of a move into a single 64-bit integer. See movegen.h
  * for the layout of a single move.
  *
  * from:        The square the moving piece started on. Must be in the
@@ -26,7 +27,8 @@ static uint64 getMove(int from, int to, int captured, int promoted, int flags) {
     return move | ((promoted & 0xF) << 16) | flags;
 }
 
-/* Add the given move to the movelist.
+/* 
+ * Add the given move to the movelist.
  *
  * move:      the move to be added to the list.
  * list:      a struct which contains an array of moves
@@ -37,20 +39,54 @@ static void addMove(int move, MoveList* list) {
     list->moves[list->numMoves++] = move;
 }
 
+/*
+ * An alternative function to addMove() that is used exclusively to add pawn
+ * moves. White pawn moves that go from the 7th rank to the 8th rank, and black
+ * pawn moves that go from the 2nd rank to the 1st rank are promotion moves. A
+ * promotion could turn a pawn into a rook, bishop, queen, or knight. This
+ * function checks to see if the move is a promotion move, and if so, adds all
+ * 4 moves to the MoveList.
+ * 
+ * board:       The current chess position, passed in as a pointer.
+ * list:        The list of moves that is being generated. All pawn moves from
+ *              this function will be added to the MoveList.
+ * from:        The square the moving piece started on. Must be in the
+ *              range [0-64).
+ * to:          The square the moving piece is moving to. Must be in the
+ *              range [0-64).
+ * captured:    If the move is a capture move, record what type of piece was
+ *              captured. NO_PIECE if not a capture move.
+ * flags:       5 bits indicating if this move is a 'special' move (castle, en
+ *              passant, promotion, capture, pawn start).
+ */
 static void addPawnMove(const Board* board, MoveList* list, int from, int to,
 int captured, int flags) {
+    uint64 move = getMove(from, to, captured, NO_PIECE, flags);
     if ((1ULL << to) & 0xFF000000000000FF) {
-        int side = board->sideToMove;
-        flags |= PROMOTION_FLAG;
-        addMove(getMove(from, to, captured, pieces[side][KNIGHT], flags), list);
-        addMove(getMove(from, to, captured, pieces[side][BISHOP], flags), list);
-        addMove(getMove(from, to, captured, pieces[side][ROOK], flags), list);
-        addMove(getMove(from, to, captured, pieces[side][QUEEN], flags), list);
+        move = (move & 0xFFFFFFFFFFF0FFFF) | PROMOTION_FLAG;
+        addMove(move | (pieces[board->sideToMove][KNIGHT] << 16), list);
+        addMove(move | (pieces[board->sideToMove][BISHOP] << 16), list);
+        addMove(move | (pieces[board->sideToMove][ROOK] << 16), list);
+        addMove(move | (pieces[board->sideToMove][QUEEN] << 16), list);
     } else {
-        addMove(getMove(from, to, captured, NO_PIECE, flags), list);
+        addMove(move, list);
     }
 }
 
+/*
+ * Generate pawn moves from the given board. Pawn move generation is separated
+ * from the generateAllMoves() function because pawns move uniquely from the
+ * other pieces. There are many special rules regarding pawns and all pawn
+ * moves for one side (regular moves and attacks) can be generated using just a
+ * few shift operations. Pawn move generation is separated into 2 functions
+ * because there are many small differences when generating white pawn moves vs
+ * black pawn moves.
+ * 
+ * board:       The current chess position which must be a valid position.
+ *              Passed in as a pointer.
+ * list:        The MoveList which will store each move that is generated from
+ *              the current board position. Passed in as a pointer.
+ */
 static void generateWhitePawnMoves(const Board* board, MoveList* list) {
     uint64 pawns = board->pieceBitboards[WHITE_PAWN];
     uint64 allPieces = board->colorBitboards[BOTH_COLORS];
@@ -91,7 +127,6 @@ static void generateWhitePawnMoves(const Board* board, MoveList* list) {
         }
     }
 }
-
 static void generateBlackPawnMoves(const Board* board, MoveList* list) {
     uint64 pawns = board->pieceBitboards[BLACK_PAWN];
     uint64 allPieces = board->colorBitboards[BOTH_COLORS];
@@ -133,7 +168,8 @@ static void generateBlackPawnMoves(const Board* board, MoveList* list) {
     }
 }
 
-/* Given the starting position of a piece and its attack bitboard, generate all
+/* 
+ * Given the starting position of a piece and its attack bitboard, generate all
  * possible moves for that piece and add them to the movelist. This function
  * can be used for all pieces except pawns (pawns have multiple special moves
  * and flags to handle).
@@ -179,34 +215,26 @@ void generateAllMoves(const Board* board, MoveList* list) {
     uint64 kings, knights, rooks, bishops, queens;
     if (board->sideToMove == WHITE) {
         generateWhitePawnMoves(board, list);
-        kings = board->pieceBitboards[WHITE_KING];
         knights = board->pieceBitboards[WHITE_KNIGHT];
-        rooks = board->pieceBitboards[WHITE_ROOK];
         bishops = board->pieceBitboards[WHITE_BISHOP];
+        rooks = board->pieceBitboards[WHITE_ROOK];
         queens = board->pieceBitboards[WHITE_QUEEN];
+        kings = board->pieceBitboards[WHITE_KING];
         samePieces = board->colorBitboards[WHITE];
     } else {
         generateBlackPawnMoves(board, list);
-        kings = board->pieceBitboards[BLACK_KING];
         knights = board->pieceBitboards[BLACK_KNIGHT];
-        rooks = board->pieceBitboards[BLACK_ROOK];
         bishops = board->pieceBitboards[BLACK_BISHOP];
+        rooks = board->pieceBitboards[BLACK_ROOK];
         queens = board->pieceBitboards[BLACK_QUEEN];
+        kings = board->pieceBitboards[BLACK_KING];
         samePieces = board->colorBitboards[BLACK];
     }
-    uint64 attacks = getKingAttacks(kings);
-    generatePieceMoves(board, list, attacks & ~samePieces, getLSB(kings));
     while (knights) {
         int knight = getLSB(knights);
         uint64 attacks = getKnightAttacks(knight);
         generatePieceMoves(board, list, attacks & ~samePieces, knight);
         knights &= knights - 1;
-    }
-    while (rooks) {
-        int rook = getLSB(rooks);
-        uint64 attacks = getRookAttacks(rook, allPieces);
-        generatePieceMoves(board, list, attacks & ~samePieces, rook);
-        rooks &= rooks - 1;
     }
     while (bishops) {
         int bishop = getLSB(bishops);
@@ -214,10 +242,18 @@ void generateAllMoves(const Board* board, MoveList* list) {
         generatePieceMoves(board, list, attacks & ~samePieces, bishop);
         bishops &= bishops - 1;
     }
+    while (rooks) {
+        int rook = getLSB(rooks);
+        uint64 attacks = getRookAttacks(rook, allPieces);
+        generatePieceMoves(board, list, attacks & ~samePieces, rook);
+        rooks &= rooks - 1;
+    }
     while (queens) {
         int queen = getLSB(queens);
         uint64 attacks = getQueenAttacks(queen, allPieces);
         generatePieceMoves(board, list, attacks & ~samePieces, queen);
         queens &= queens - 1;
     }
+    uint64 attacks = getKingAttacks(kings);
+    generatePieceMoves(board, list, attacks & ~samePieces, getLSB(kings));
 }
