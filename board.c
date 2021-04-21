@@ -174,16 +174,33 @@ static void movePiece(Board* board, int from, int to) {
 int makeMove(Board* board, uint64 move) {
     assert(checkBoard(board));
     assert(validMove(move));
-    board->history[board->ply++].move = move;
+    board->history[board->ply].move = move;
+    board->history[board->ply++].enPassantSquare = board->enPassantSquare;
+    board->enPassantSquare = 0ULL;
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
-    if ((move & MOVE_FLAGS) == CAPTURE_FLAG) {
-        clearPiece(board, to);
+    switch (move & MOVE_FLAGS) {
+        case CAPTURE_FLAG:
+            clearPiece(board, to);
+            break;
+        case CAPTURE_AND_PROMOTION_FLAG:
+            clearPiece(board, to);
+            // intentional fall through
+        case PROMOTION_FLAG:
+            clearPiece(board, from);
+            addPiece(board, from, (move >> 16) & 0xF);
+            break;
+        case PAWN_START_FLAG:
+            board->enPassantSquare = 1ULL << ((to + from) / 2);
+            break;
+        case EN_PASSANT_FLAG:
+            clearPiece(board, to + (board->sideToMove * 16 - 8));
+            break;
     }
     movePiece(board, from, to);
-    assert(checkBoard(board));
     int king = board->sideToMove == WHITE ? WHITE_KING : BLACK_KING;
     board->sideToMove = !board->sideToMove;
+    assert(checkBoard(board));
     if (!squareAttacked(board, board->pieceBitboards[king], board->sideToMove)) {
         return 1;
     }
@@ -199,8 +216,22 @@ void undoMove(Board* board) {
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
     movePiece(board, to, from);
-    if ((move & MOVE_FLAGS) == CAPTURE_FLAG) {
-        addPiece(board, to, (move >> 12) & 0xF);
+    switch (move & MOVE_FLAGS) {
+        case CAPTURE_FLAG:
+            addPiece(board, to, (move >> 12) & 0xF);
+            break;
+        case CAPTURE_AND_PROMOTION_FLAG:
+            addPiece(board, to, (move >> 12) & 0xF);
+            // intentional fall through
+        case PROMOTION_FLAG:
+            clearPiece(board, from);
+            addPiece(board, from, pieces[board->sideToMove][PAWN]);
+            break;
+        case EN_PASSANT_FLAG:
+            addPiece(board, to + (board->sideToMove * 16 - 8),
+                pieces[!board->sideToMove][PAWN]);
+            break;
     }
+    board->enPassantSquare = board->history[board->ply].enPassantSquare;
     assert(checkBoard(board));
 }
