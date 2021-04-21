@@ -202,9 +202,7 @@ int validMove(uint64 move) {
  */
 void printPieces(const Board* board) {
     assert(board != NULL);
-    const char pieceChar[NUM_PIECE_TYPES] = {
-        'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'
-    };
+    const char* pieceChar = "PNBRQKpnbrqk";
     for (int square = 56; square >= 0; square -= 8) {
         for (int fileIndex = 0; fileIndex < 8; ++fileIndex) {
             int piece = board->pieces[square + fileIndex];
@@ -212,4 +210,82 @@ void printPieces(const Board* board) {
         }
         putchar('\n');
     }
+}
+
+// print the given bitboard. an 'X' will mark a 1 and a '-' will mark a 0
+// print Rank 8 first so that it appears at the top
+static void printBitboard(uint64 bitboard) {
+    for (int i = 56; i >= 0; i -= 8) {
+        for (int j = 0; j < 8; ++j) {
+            printf("%c ", (bitboard & (1ULL << (i + j))) ? 'X' : '-');
+        }
+        putchar('\n');
+    }
+}
+
+void printBoard(const Board* board) {
+    assert(board);
+    puts("============================================");
+    printf("side to move: %c\n", board->sideToMove == WHITE ? 'w' : 'b');
+    puts("pieces:");
+    printPieces(board);
+    puts("white pawns:");
+    printBitboard(board->pieceBitboards[0]);
+    puts("white knights:");
+    printBitboard(board->pieceBitboards[1]);
+    puts("white bishops:");
+    printBitboard(board->pieceBitboards[2]);
+    puts("white rooks:");
+    printBitboard(board->pieceBitboards[3]);
+    puts("white queens:");
+    printBitboard(board->pieceBitboards[4]);
+    puts("white king:");
+    printBitboard(board->pieceBitboards[5]);
+    puts("black pawns:");
+    printBitboard(board->pieceBitboards[6]);
+    puts("black knights:");
+    printBitboard(board->pieceBitboards[7]);
+    puts("black bishops:");
+    printBitboard(board->pieceBitboards[8]);
+    puts("black rooks:");
+    printBitboard(board->pieceBitboards[9]);
+    puts("black queens:");
+    printBitboard(board->pieceBitboards[10]);
+    puts("black king:");
+    printBitboard(board->pieceBitboards[11]);
+    puts("===================================");
+    puts("White pieces:");
+    printBitboard(board->colorBitboards[WHITE]);
+    puts("Black pieces:");
+    printBitboard(board->colorBitboards[BLACK]);
+    puts("All pieces:");
+    printBitboard(board->colorBitboards[BOTH_COLORS]);
+    //printf("castle permissions: ");
+    //putchar(board->castlePermissions & CASTLE_KINGSIDE_WHITE ? 'K' : '-');
+    //putchar(board->castlePermissions & CASTLE_QUEENSIDE_WHITE ? 'Q' : '-');
+    //putchar(board->castlePermissions & CASTLE_KINGSIDE_BLACK ? 'k' : '-');
+    //putchar(board->castlePermissions & CASTLE_QUEENSIDE_BLACK ? 'q' : '-');
+    //puts("\nen passant square:");
+    //printBitboard(board->enPassantSquare);
+    //printf("fifty move count: %d\n", board->fiftyMoveCount);
+    printf("ply: %d\n", board->ply);
+    puts("============================================");
+}
+
+static void getSquareString(int square, char* squareString) {
+    assert(squareString && square >= 0 && square < 64);
+    squareString[0] = square % 8 + 'a';
+    squareString[1] = square / 8 + '1';
+    squareString[2] = 0;
+}
+
+void getMoveString(int move, char* moveString) {
+    assert(validMove(move));
+    char fromSquareString[3], toSquareString[3];
+    getSquareString(move & 0x3F, fromSquareString);
+    getSquareString((move >> 6) & 0x3F, toSquareString);
+    int promotedPiece = (move >> 16) & 0xF;
+    const char* pieceChar = "PNBRQKpnbrqk";
+    char promotedChar = promotedPiece == NO_PIECE ? '\0' : pieceChar[promotedPiece];
+    sprintf(moveString, "%s%s%c", fromSquareString, toSquareString, promotedChar);
 }
