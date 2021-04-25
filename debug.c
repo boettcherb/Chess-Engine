@@ -118,6 +118,8 @@ int checkBoard(const Board* board) {
             assert(board->pieces[sq + 8] == WHITE_PAWN);
         }
     }
+    // make sure that only the last 4 bits of the castlePerms int are used
+    assert(!(board->castlePerms & 0xFFFFFFF0));
     return 1;
 }
 
@@ -276,11 +278,11 @@ void printBoard(const Board* board) {
     printBitboard(board->colorBitboards[BLACK]);
     puts("All pieces:");
     printBitboard(board->colorBitboards[BOTH_COLORS]);
-    //printf("castle permissions: ");
-    //putchar(board->castlePermissions & CASTLE_KINGSIDE_WHITE ? 'K' : '-');
-    //putchar(board->castlePermissions & CASTLE_QUEENSIDE_WHITE ? 'Q' : '-');
-    //putchar(board->castlePermissions & CASTLE_KINGSIDE_BLACK ? 'k' : '-');
-    //putchar(board->castlePermissions & CASTLE_QUEENSIDE_BLACK ? 'q' : '-');
+    printf("castle permissions: ");
+    putchar(board->castlePerms & CASTLE_WK ? 'K' : '-');
+    putchar(board->castlePerms & CASTLE_WQ ? 'Q' : '-');
+    putchar(board->castlePerms & CASTLE_BK ? 'k' : '-');
+    putchar(board->castlePerms & CASTLE_BQ ? 'q' : '-');
     puts("\nen passant square:");
     printBitboard(board->enPassantSquare);
     //printf("fifty move count: %d\n", board->fiftyMoveCount);

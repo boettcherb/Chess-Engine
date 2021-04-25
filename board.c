@@ -44,14 +44,17 @@ int setBoardToFen(Board* board, const char* fen) {
     assert(board != NULL);
     assert(fen != NULL);
     resetBoard(board);
-    char layout[70], side, castlePermissions[5], enPassantSquare[3];
+    char layout[100], side, castlePerms[100], enPassantSquare[100];
     int fiftyMoveCount, moveNumber;
-    if (sscanf(fen, "%s %c %s %s %d %d", layout, &side, castlePermissions,
+    if (sscanf(fen, "%s %c %s %s %d %d", layout, &side, castlePerms,
         enPassantSquare, &fiftyMoveCount, &moveNumber) != 6) {
         puts("Error: setBoardToFen: Could not parse or invalid FEN string.");
         return 0;
     }
+
+    // layout
     int layoutLength = strlen(layout), square = 56, numEmpty;
+    assert(layoutLength < 70);
     for (int layoutPos = 0; layoutPos < layoutLength; ++layoutPos) {
         switch(layout[layoutPos]) {
             case 'P': board->pieces[square++] = WHITE_PAWN; break;
@@ -70,7 +73,7 @@ int setBoardToFen(Board* board, const char* fen) {
             default:
                 numEmpty = layout[layoutPos] - '0';
                 if (numEmpty < 1 || numEmpty > 8) {
-                    puts("Error: setBoardToFen: Invalid character.");
+                    puts("Error: setBoardToFen: Invalid character (layout)");
                     return 0;
                 }
                 square += numEmpty;
@@ -85,17 +88,49 @@ int setBoardToFen(Board* board, const char* fen) {
             board->colorBitboards[BOTH_COLORS] |= (1ULL << square);
         }
     }
+
+    // side to move
     if (side != 'w' && side != 'b') {
         puts("Error: setBoardToFen: color char must be either 'w' or 'b'.");
         return 0;
     }
     board->sideToMove = side == 'w' ? WHITE : BLACK;
+
+    // castle permissions
+    int castlePermsLength = strlen(castlePerms); 
+    assert(castlePermsLength < 5);
+    for (int pos = 0; pos < castlePermsLength; ++pos) {
+        switch (castlePerms[pos]) {
+            case 'K': board->castlePerms |= CASTLE_WK; break;
+            case 'k': board->castlePerms |= CASTLE_WQ; break;
+            case 'Q': board->castlePerms |= CASTLE_BK; break;
+            case 'q': board->castlePerms |= CASTLE_BQ; break;
+            case '-': assert(pos == 0); break;
+            default:
+                puts("Error: setBoardToFen: Invalid character (castle perms)");
+                return 0;
+        }
+    }
+
+    // en passant square
+    assert(strlen(enPassantSquare) < 3);
+    if (enPassantSquare[0] != '-') {
+        int file = enPassantSquare[0] - 'a';
+        int rank = enPassantSquare[1] - '1';
+        assert((side == 'w' && file == 5) || (side == 'b' && file == 2));
+        assert(rank >= 0 && rank < 8);
+        board->enPassantSquare = 1ULL << (file * 8 + rank);
+    }
+
+    // TODO: fifty move rule
+
+    // move number
     if (moveNumber < 1) {
         puts("Error: setBoardToFen: moveNumber must be >= 1");
         return 0;
     }
-    board->ply = 2 * moveNumber - (side == 'w');
-    // TODO: castle permissions, en passant square, fifty move rule
+    board->ply = 0;
+
     assert(checkBoard(board));
     return 1;
 }
