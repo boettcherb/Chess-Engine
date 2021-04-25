@@ -19,6 +19,11 @@ typedef unsigned long long uint64;
 #define EN_PASSANT_FLAG            0x0800000
 #define PAWN_START_FLAG            0x1000000
 
+#define CASTLE_WK 0x1
+#define CASTLE_WQ 0x2
+#define CASTLE_BK 0x4
+#define CASTLE_BQ 0x8
+
 enum Piece {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,

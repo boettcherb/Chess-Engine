@@ -15,10 +15,14 @@
  *                    information about the move.
  * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
  *                    current side to move could attack by the en passant rule.
+ * castlePerms:       A combination of bit flags denoting which castling moves
+ *                    are legal. Ex: If (castlePerms & CASTLE_WQ != 0), then
+ *                    white can castle queenside in the current position.
  */
 typedef struct {
     uint64 move;
     uint64 enPassantSquare;
+    int castlePerms;
 } PreviousMove;
 
 /*
@@ -42,6 +46,9 @@ typedef struct {
  *                    whose turn it is in the current position.
  * ply:               An integer holding the number of half moves made to get
  *                    to the current board position.
+ * castlePerms:       A combination of bit flags denoting which castling moves
+ *                    are legal. Ex: If (castlePerms & CASTLE_WQ != 0), then
+ *                    white can castle queenside in the current position.
  * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
  *                    current side to move could attack by the en passant rule.
  * history:           An array of PreviousMove structs that hold info about all
@@ -53,6 +60,7 @@ typedef struct {
     signed char pieces[64];
     int sideToMove;
     int ply;
+    int castlePerms;
     uint64 enPassantSquare;
     PreviousMove history[MAX_GAME_MOVES];
 } Board;
