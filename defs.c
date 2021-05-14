@@ -21,12 +21,16 @@ const int pieces[BOTH_COLORS][NUM_PIECE_TYPES] = {
  */
 int getLSB(uint64 bitboard) {
     assert(bitboard != 0);
+#ifdef __GNUC__
+    return __builtin_ctzll(bitboard);
+#else
     int index = 0;
     while (!(bitboard & 0x1)) {
         bitboard >>= 1;
         ++index;
     }
     return index;
+#endif
 }
 
 /*
@@ -39,6 +43,9 @@ int getLSB(uint64 bitboard) {
  * return:     The index of the given bitboard's most significant bit.
  */
 int getMSB(uint64 bitboard) {
+#ifdef __GNUC__
+    return 63 - __builtin_clzll(bitboard);
+#else
     assert(bitboard != 0);
     int index = 63;
     while (!(bitboard & 0x8000000000000000)) {
@@ -46,6 +53,7 @@ int getMSB(uint64 bitboard) {
         --index;
     }
     return index;
+#endif
 }
 
 /*
@@ -57,9 +65,13 @@ int getMSB(uint64 bitboard) {
  * return:     The number of bits in the bitboard that are set to 1.
  */
 int countBits(uint64 bitboard) {
+#ifdef __GNUC__
+    return __builtin_popcountll(bitboard);
+#else
     int bits;
     for (bits = 0; bitboard; ++bits) {
         bitboard &= bitboard - 1;
     }
     return bits;
+#endif
 }
