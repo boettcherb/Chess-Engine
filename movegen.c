@@ -192,6 +192,49 @@ uint64 attacks, int from) {
 }
 
 /*
+ * Generate all castle moves for the current position. Castle move generation
+ * is split into 2 functions: 1 for the white pieces and 1 for the black
+ * pieces. These function first check the castle flags. If castling is allowed,
+ * they check to see if there are any pieces in between the king and rook, if
+ * the king is in check, or if the king will pass through check or end up in
+ * check. If all of these conditions pass, castling moves are added to the
+ * move list. 
+ * 
+ * board:      The current chess position. Passed in as a pointer which must
+ *             not be NULL.
+ * list:       The list of moves for the current chess position. Passed in as
+ *             a pointer which must not be NULL.
+ */
+static void generateWhiteCastleMoves(const Board* board, MoveList* list) {
+    if (board->castlePerms & CASTLE_WK) {
+        if (!(board->colorBitboards[BOTH_COLORS] & 0x0000000000000060ULL) &&
+        !squareAttacked(board, 0x0000000000000070ULL, BLACK)) {
+            addMove(getMove(E1, G1, NO_PIECE, NO_PIECE, CASTLE_FLAG), list);    
+        }
+    }
+    if (board->castlePerms & CASTLE_WQ) {
+        if (!(board->colorBitboards[BOTH_COLORS] & 0x000000000000000EULL) &&
+        !squareAttacked(board, 0x000000000000001CULL, BLACK)) {
+            addMove(getMove(E1, C1, NO_PIECE, NO_PIECE, CASTLE_FLAG), list);
+        }
+    }
+}
+static void generateBlackCastleMoves(const Board* board, MoveList* list) {
+    if (board->castlePerms & CASTLE_BK) {
+        if (!(board->colorBitboards[BOTH_COLORS] & 0x6000000000000000ULL) &&
+        !squareAttacked(board, 0x7000000000000000ULL, WHITE)) {
+            addMove(getMove(E8, G8, NO_PIECE, NO_PIECE, CASTLE_FLAG), list);
+        }
+    }
+    if (board->castlePerms & CASTLE_BQ) {
+        if (!(board->colorBitboards[BOTH_COLORS] & 0x0E00000000000000ULL) &&
+        !squareAttacked(board, 0x1C00000000000000ULL, WHITE)) {
+            addMove(getMove(E8, C8, NO_PIECE, NO_PIECE, CASTLE_FLAG), list);
+        }
+    }
+}
+
+/*
  * Generate all legal and pseudo-legal moves for the given chess position and 
  * store them in the MoveList. Each move in chess moves a piece from one square
  * to another. A move could be a capture or a special move (castle, en passant, 
@@ -214,6 +257,7 @@ void generateAllMoves(const Board* board, MoveList* list) {
     uint64 samePieces, allPieces = board->colorBitboards[BOTH_COLORS];
     uint64 kings, knights, rooks, bishops, queens;
     if (board->sideToMove == WHITE) {
+        generateWhiteCastleMoves(board, list);
         generateWhitePawnMoves(board, list);
         knights = board->pieceBitboards[WHITE_KNIGHT];
         bishops = board->pieceBitboards[WHITE_BISHOP];
@@ -222,6 +266,7 @@ void generateAllMoves(const Board* board, MoveList* list) {
         kings = board->pieceBitboards[WHITE_KING];
         samePieces = board->colorBitboards[WHITE];
     } else {
+        generateBlackCastleMoves(board, list);
         generateBlackPawnMoves(board, list);
         knights = board->pieceBitboards[BLACK_KNIGHT];
         bishops = board->pieceBitboards[BLACK_BISHOP];

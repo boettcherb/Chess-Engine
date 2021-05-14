@@ -102,8 +102,8 @@ int setBoardToFen(Board* board, const char* fen) {
     for (int pos = 0; pos < castlePermsLength; ++pos) {
         switch (castlePerms[pos]) {
             case 'K': board->castlePerms |= CASTLE_WK; break;
-            case 'k': board->castlePerms |= CASTLE_WQ; break;
-            case 'Q': board->castlePerms |= CASTLE_BK; break;
+            case 'Q': board->castlePerms |= CASTLE_WQ; break;
+            case 'k': board->castlePerms |= CASTLE_BK; break;
             case 'q': board->castlePerms |= CASTLE_BQ; break;
             case '-': assert(pos == 0); break;
             default:
@@ -208,6 +208,30 @@ static void movePiece(Board* board, int from, int to) {
 }
 
 /*
+ * This array is used to update the castlePermissions member of the board
+ * struct. Whenever a move is made, this operation:
+ * board->castlePermissions &= castlePerms[from] & castlePerms[to];
+ * is all that is needed to update the board's castle permissions. Note that
+ * most squares (except the starting positions of the kings and rooks) are
+ * 0xF, which causes the above operation to have no effect. This is because
+ * the castle permissions of a chess board do not change if the rooks/kings
+ * are not the pieces that are moving/being taken. Example: castlePerms[A1]
+ * is 0xD (1101). If the rook on A1 moves/is taken, board->castlePermissions
+ * will be updated from 1111 to 1101 with the above operation, which signifies
+ * that white can no longer castle queenside.
+ */
+static const int castlePerms[64] = {
+    0xD, 0xF, 0xF, 0xF, 0xC, 0xF, 0xF, 0xE,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0x7, 0xF, 0xF, 0xF, 0x3, 0xF, 0xF, 0xB,
+};
+
+/*
  * Make a move on the chessboard and update the board's member variables. The
  * function movePiece() is called as a part of this function. This function also
  * takes care of captured pieces, promoted pieces, casting, en passant, the
@@ -227,11 +251,13 @@ static void movePiece(Board* board, int from, int to) {
 int makeMove(Board* board, uint64 move) {
     assert(checkBoard(board));
     assert(validMove(move));
-    board->history[board->ply].move = move;
-    board->history[board->ply++].enPassantSquare = board->enPassantSquare;
-    board->enPassantSquare = 0ULL;
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
+    board->history[board->ply].move = move;
+    board->history[board->ply].enPassantSquare = board->enPassantSquare;
+    board->history[board->ply++].castlePerms = board->castlePerms;
+    board->enPassantSquare = 0ULL;
+    board->castlePerms &= castlePerms[from] & castlePerms[to];
     switch (move & MOVE_FLAGS) {
         case CAPTURE_FLAG:
             clearPiece(board, to);
@@ -242,6 +268,15 @@ int makeMove(Board* board, uint64 move) {
         case PROMOTION_FLAG:
             clearPiece(board, from);
             addPiece(board, from, (move >> 16) & 0xF);
+            break;
+        case CASTLE_FLAG:
+            switch (to) {
+                case G1: movePiece(board, H1, F1); break;
+                case C1: movePiece(board, A1, D1); break;
+                case G8: movePiece(board, H8, F8); break;
+                case C8: movePiece(board, A8, D8); break;
+                default: assert(0);
+            }
             break;
         case PAWN_START_FLAG:
             board->enPassantSquare = 1ULL << ((to + from) / 2);
@@ -291,11 +326,21 @@ void undoMove(Board* board) {
             clearPiece(board, from);
             addPiece(board, from, pieces[board->sideToMove][PAWN]);
             break;
+        case CASTLE_FLAG:
+            switch (to) {
+                case G1: movePiece(board, F1, H1); break;
+                case C1: movePiece(board, D1, A1); break;
+                case G8: movePiece(board, F8, H8); break;
+                case C8: movePiece(board, D8, A8); break;
+                default: assert(0);
+            }
+            break;
         case EN_PASSANT_FLAG:
             addPiece(board, to + (board->sideToMove * 16 - 8),
                 pieces[!board->sideToMove][PAWN]);
             break;
     }
     board->enPassantSquare = board->history[board->ply].enPassantSquare;
+    board->castlePerms = board->history[board->ply].castlePerms;
     assert(checkBoard(board));
 }
