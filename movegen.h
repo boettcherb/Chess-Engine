@@ -16,7 +16,7 @@ Each move in a MoveList is a 64-bit integer with the following information:
 0 1000 0000 0000 0000 0000 0000   1 bit for the en passant flag
 1 0000 0000 0000 0000 0000 0000   1 bit for the pawn start flag
 
-The remaining 39 bits contain the move score. This score will be used with
+The remaining 7 bits contain the move score. This score will be used with
 the minimax / alpha-beta algorithm. A move will have a higher score if it is
 likely to be a good move (Ex: captures, promotions, castling). Sorting moves
 by their score will help the search algorithm run faster, as more pruning
@@ -32,17 +32,17 @@ can occur if the best moves are considered first.
  * numMoves:     An integer storing the number of moves in the MoveList. The 
  *               number of moves in the list cannot exceed MAX_GAME_MOVES.
  * moves:        An array of moves. Each move contains multiple pieces of 
- *               information which is combined into 1 64-bit integer.
+ *               information which is combined into 1 32-bit integer.
  */
 typedef struct {
     int numMoves;
-    uint64 moves[MAX_GAME_MOVES];
+    int moves[MAX_GAME_MOVES];
 } MoveList;
 
 void generateAllMoves(const Board* board, MoveList* list);
 
 #ifndef NDEBUG
-    int validMove(uint64 move);
+    int validMove(int move);
 #endif
 
 #endif

@@ -20,9 +20,9 @@
  *                    white can castle queenside in the current position.
  */
 typedef struct {
-    uint64 move;
-    uint64 enPassantSquare;
+    int move;
     int castlePerms;
+    uint64 enPassantSquare;
 } PreviousMove;
 
 /*
@@ -67,13 +67,13 @@ typedef struct {
 
 void resetBoard(Board* board);
 int setBoardToFen(Board* board, const char* fen);
-int makeMove(Board* board, uint64 move);
+int makeMove(Board* board, int move);
 void undoMove(Board* board);
 
 // functions only used in debug mode. NDEBUG is included with <assert.h>
 #ifndef NDEBUG
     int checkBoard(const Board* board);
-    int validMove(uint64 move);
+    int validMove(int move);
     void printPieces(const Board* board);
     void printBoard(const Board* board);
     void getMoveString(uint64 move, char* moveString);

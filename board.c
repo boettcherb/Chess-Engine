@@ -242,20 +242,20 @@ static const int castlePerms[64] = {
  * 
  * board:         The board that is being updated. The board must be a valid
  *                chess position.
- * move:          The move that this function is making. Passed in as a 64-bit
+ * move:          The move that this function is making. Passed in as a 32-bit
  *                integer containing all the necessary information.
  * 
  * return:        1 if the move that was made was a legal move (did not leave
  *                the king in check), 0 if the move was illegal.
  */
-int makeMove(Board* board, uint64 move) {
+int makeMove(Board* board, int move) {
     assert(checkBoard(board));
     assert(validMove(move));
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
     board->history[board->ply].move = move;
-    board->history[board->ply].enPassantSquare = board->enPassantSquare;
-    board->history[board->ply++].castlePerms = board->castlePerms;
+    board->history[board->ply].castlePerms = board->castlePerms;
+    board->history[board->ply++].enPassantSquare = board->enPassantSquare;
     board->enPassantSquare = 0ULL;
     board->castlePerms &= castlePerms[from] & castlePerms[to];
     switch (move & MOVE_FLAGS) {
@@ -311,7 +311,7 @@ void undoMove(Board* board) {
     assert(checkBoard(board));
     assert(board->ply > 0);
     board->sideToMove = !board->sideToMove;
-    uint64 move = board->history[--board->ply].move;
+    int move = board->history[--board->ply].move;
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
     movePiece(board, to, from);
@@ -340,7 +340,7 @@ void undoMove(Board* board) {
                 pieces[!board->sideToMove][PAWN]);
             break;
     }
-    board->enPassantSquare = board->history[board->ply].enPassantSquare;
     board->castlePerms = board->history[board->ply].castlePerms;
+    board->enPassantSquare = board->history[board->ply].enPassantSquare;
     assert(checkBoard(board));
 }

@@ -130,13 +130,13 @@ int checkBoard(const Board* board) {
  * king or the promotion flag and castle flag both being set. This is a
  * debugging function that should only be used inside assert statements.
  * 
- * move:              A 64-bit integer containing all the information about
+ * move:              An integer containing all the information about
  *                    a single move.
  * 
  * return:            True if the move is valid. If the move is not valid, one
  *                    of the internal asserts should fail.
  */
-int validMove(uint64 move) {
+int validMove(int move) {
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;
     int captured = (move >> 12) & 0xF;

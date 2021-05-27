@@ -4,7 +4,7 @@
 #include "attack.h"
 
 /* 
- * Assemble all the parts of a move into a single 64-bit integer. See movegen.h
+ * Assemble all the parts of a move into a single 32-bit integer. See movegen.h
  * for the layout of a single move.
  *
  * from:        The square the moving piece started on. Must be in the
@@ -18,12 +18,12 @@
  * flags:       5 bits indicating if this move is a 'special' move (castle, en
  *              passant, promotion, capture, pawn start).
  * 
- * return:      A 64-bit integer containing all the parts of the move.
+ * return:      A 32-bit integer containing all the parts of the move.
  */
-static uint64 getMove(int from, int to, int captured, int promoted, int flags) {
+static int getMove(int from, int to, int captured, int promoted, int flags) {
     assert(from >= 0 && from < 64 && to >= 0 && to < 64);
     assert((flags & ~MOVE_FLAGS) == 0);
-    uint64 move = from | (to << 6) | ((captured & 0xF) << 12);
+    int move = from | (to << 6) | ((captured & 0xF) << 12);
     return move | ((promoted & 0xF) << 16) | flags;
 }
 
@@ -61,7 +61,7 @@ static void addMove(int move, MoveList* list) {
  */
 static void addPawnMove(const Board* board, MoveList* list, int from, int to,
 int captured, int flags) {
-    uint64 move = getMove(from, to, captured, NO_PIECE, flags);
+    int move = getMove(from, to, captured, NO_PIECE, flags);
     if ((1ULL << to) & 0xFF000000000000FF) {
         move = (move & 0xFFFFFFFFFFF0FFFF) | PROMOTION_FLAG;
         addMove(move | (pieces[board->sideToMove][KNIGHT] << 16), list);
