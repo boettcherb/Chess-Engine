@@ -297,11 +297,11 @@ void printBoard(const Board* board) {
  * results in a promotion, append the letter of the promoted piece to the move
  * string. For example: "a7a8Q".
  * 
- * move:        A 64-bit integer with all the information of the move.
+ * move:        A 32-bit integer with all the information of the move.
  * moveString:  A string where the text-version of the move will be placed. The
  *              string must be at least 6 chars long.
  */
-void getMoveString(uint64 move, char* moveString) {
+void getMoveString(int move, char* moveString) {
     assert(validMove(move));
     const char* pieceChar = "PNBRQKpnbrqk\0\0\0\0\0";
     moveString[0] = (move & 0x3F) % 8 + 'a';
