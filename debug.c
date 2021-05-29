@@ -141,6 +141,7 @@ int validMove(int move) {
     int to = (move >> 6) & 0x3F;
     int captured = (move >> 12) & 0xF;
     int promoted = (move >> 16) & 0xF;
+    assert(move >> 25);
     if (move & CAPTURE_FLAG) {
         assert(!(move & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
         assert(captured >= WHITE_PAWN && captured <= BLACK_KING);

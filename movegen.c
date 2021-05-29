@@ -3,6 +3,69 @@
 #include "board.h"
 #include "attack.h"
 
+#include "stdlib.h"
+
+/*
+ * These arrays are used to find the move score of a particular move. The move
+ * score is used to rank the moves genereted by generatedAllMoves() based on 
+ * how likely they are to be good moves. Promotions and captures will have a 
+ * higher score than normal moves. This is used to speed up the alpha-beta
+ * algorithm, since more pruning can occur if the best moves are considered
+ * first. Note that move evaluations are different from static board
+ * evaluations, which determine which move is actually chosen by the alpha-beta
+ * algorithm. Move evalutions only determine the order in which moves are
+ * considered, not which moves are chosen.
+ * 
+ * Ex: A pawn move to capture a queen will be considered before a knight move
+ * to capture a pawn:
+ *     captureScore[WHITE_PAWN][BLACK_QUEEN] = 59
+ *     captureScore[WHITE_KNIGHT][BLACK_PAWN] = 37
+ * Ex: pawn moves are considered before king moves:
+ *     moveScore[WHITE_PAWN] = 27, moveScore[WHITE_KING] = 22
+ * Ex: queen promotions are considered before rook promotions: 
+ *     promotionScore[WHITE_QUEEN] = 60, promotionScore[WHITE_ROOK] = 19
+ */
+int captureScore[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
+    { 0, 0, 0, 0, 0, 0, 43, 52, 53, 56, 59, 0 },
+    { 0, 0, 0, 0, 0, 0, 37, 46, 47, 51, 58, 0 },
+    { 0, 0, 0, 0, 0, 0, 36, 44, 45, 50, 57, 0 },
+    { 0, 0, 0, 0, 0, 0, 35, 41, 42, 48, 55, 0 },
+    { 0, 0, 0, 0, 0, 0, 34, 38, 39, 40, 49, 0 },
+    { 0, 0, 0, 0, 0, 0, 30, 31, 32, 33, 54, 0 },
+    { 43, 52, 53, 56, 59, 0, 0, 0, 0, 0, 0, 0 },
+    { 37, 46, 47, 51, 58, 0, 0, 0, 0, 0, 0, 0 },
+    { 36, 44, 45, 50, 57, 0, 0, 0, 0, 0, 0, 0 },
+    { 35, 41, 42, 48, 55, 0, 0, 0, 0, 0, 0, 0 },
+    { 34, 38, 39, 40, 49, 0, 0, 0, 0, 0, 0, 0 },
+    { 30, 31, 32, 33, 54, 0, 0, 0, 0, 0, 0, 0 },
+};
+int moveScore[NUM_PIECE_TYPES] = {
+    27, 26, 25, 24, 23, 22, 27, 26, 25, 24, 23, 22,
+};
+int promotionScore[NUM_PIECE_TYPES] = {
+    0, 19, 18, 20, 60, 0, 0, 19, 18, 20, 60, 0,
+};
+
+/*
+ * A comparator function used by qsort at the end of generateAllMoves() to
+ * sort the moves in the move list by their score. The final operation is
+ * "score of first move minus score of second move" because we want to sort
+ * the moves in descending order.
+ * 
+ * m1:      The first move to be compared. Passed in as a const void pointer.
+ * m2:      The second move to be compared. Passed in as a const void pointer.
+ * 
+ * return:  The difference between the two move scores, as an integer. If the
+ *          difference is positive, the second move has a higher score and
+ *          will be placed before the first move in the sorted list, and vice
+ *          versa.
+ */
+int compareMoves(const void* m1, const void* m2) {
+    int move1 = *((int*) m1);
+    int move2 = *((int*) m2);
+    return (move2 >> 25) - (move1 >> 25);
+}
+
 /* 
  * Assemble all the parts of a move into a single 32-bit integer. See movegen.h
  * for the layout of a single move.
@@ -28,13 +91,27 @@ static int getMove(int from, int to, int captured, int promoted, int flags) {
 }
 
 /* 
- * Add the given move to the movelist.
+ * Add the given move to the movelist. Update the promotion if the move is a
+ * pawn start, castle, en passant, or promotion.
  *
  * move:      the move to be added to the list.
  * list:      a struct which contains an array of moves
  */
 static void addMove(int move, MoveList* list) {
     assert(list->numMoves >= 0);
+    switch (move & MOVE_FLAGS) {
+        case PAWN_START_FLAG: move |= (28 << 25); break;
+        case CASTLE_FLAG:     move |= (29 << 25); break;
+        case EN_PASSANT_FLAG: move |= (43 << 25); break;
+        case PROMOTION_FLAG:
+            move &= 0x01FFFFFF;
+            move += promotionScore[(move >> 16) & 0xF] << 25;
+            break;
+        case CAPTURE_AND_PROMOTION_FLAG:
+            move &= 0x01FFFFFF;
+            move += (promotionScore[(move >> 16) & 0xF] + 1) << 25;
+            
+    }
     assert(validMove(move));
     list->moves[list->numMoves++] = move;
 }
@@ -60,10 +137,11 @@ static void addMove(int move, MoveList* list) {
  *              passant, promotion, capture, pawn start).
  */
 static void addPawnMove(const Board* board, MoveList* list, int from, int to,
-int captured, int flags) {
-    int move = getMove(from, to, captured, NO_PIECE, flags);
+int captured, int score) {
+    int flags = captured == NO_PIECE ? 0 : CAPTURE_FLAG;
+    int move = getMove(from, to, captured, NO_PIECE, flags) | (score << 25);
     if ((1ULL << to) & 0xFF000000000000FF) {
-        move = (move & 0xFFFFFFFFFFF0FFFF) | PROMOTION_FLAG;
+        move = (move & 0xFFF0FFFF) | PROMOTION_FLAG;
         addMove(move | (pieces[board->sideToMove][KNIGHT] << 16), list);
         addMove(move | (pieces[board->sideToMove][BISHOP] << 16), list);
         addMove(move | (pieces[board->sideToMove][ROOK] << 16), list);
@@ -97,7 +175,7 @@ static void generateWhitePawnMoves(const Board* board, MoveList* list) {
     uint64 rightAttacks = getWhitePawnAttacksRight(pawns) & opponentPieces;
     while (pawnMoves) {
         int to = getLSB(pawnMoves);
-        addPawnMove(board, list, to - 8, to, NO_PIECE, 0);
+        addPawnMove(board, list, to - 8, to, NO_PIECE, moveScore[WHITE_PAWN]);
         pawnMoves &= pawnMoves - 1;
     }
     while (pawnStarts) {
@@ -107,12 +185,14 @@ static void generateWhitePawnMoves(const Board* board, MoveList* list) {
     }
     while (leftAttacks) {
         int to = getLSB(leftAttacks);
-        addPawnMove(board, list, to - 7, to, board->pieces[to], CAPTURE_FLAG);
+        int score = captureScore[WHITE_PAWN][board->pieces[to]];
+        addPawnMove(board, list, to - 7, to, board->pieces[to], score);
         leftAttacks &= leftAttacks - 1;
     }
     while (rightAttacks) {
         int to  = getLSB(rightAttacks);
-        addPawnMove(board, list, to - 9, to, board->pieces[to], CAPTURE_FLAG);
+        int score = captureScore[WHITE_PAWN][board->pieces[to]];
+        addPawnMove(board, list, to - 9, to, board->pieces[to], score);
         rightAttacks &= rightAttacks - 1;
     }
     if (board->enPassantSquare != 0ULL) {
@@ -137,7 +217,7 @@ static void generateBlackPawnMoves(const Board* board, MoveList* list) {
     uint64 rightAttacks = getBlackPawnAttacksRight(pawns) & opponentPieces;
     while (pawnMoves) {
         int to = getLSB(pawnMoves);
-        addPawnMove(board, list, to + 8, to, NO_PIECE, 0);
+        addPawnMove(board, list, to + 8, to, NO_PIECE, moveScore[BLACK_PAWN]);
         pawnMoves &= pawnMoves - 1;
     }
     while (pawnStarts) {
@@ -147,12 +227,14 @@ static void generateBlackPawnMoves(const Board* board, MoveList* list) {
     }
     while (leftAttacks) {
         int to = getLSB(leftAttacks);
-        addPawnMove(board, list, to + 7, to, board->pieces[to], CAPTURE_FLAG);
+        int score = captureScore[BLACK_PAWN][board->pieces[to]];
+        addPawnMove(board, list, to + 7, to, board->pieces[to], score);
         leftAttacks &= leftAttacks - 1;
     }
     while (rightAttacks) {
         int to  = getLSB(rightAttacks);
-        addPawnMove(board, list, to + 9, to, board->pieces[to], CAPTURE_FLAG);
+        int score = captureScore[BLACK_PAWN][board->pieces[to]];
+        addPawnMove(board, list, to + 9, to, board->pieces[to], score);
         rightAttacks &= rightAttacks - 1;
     }
     if (board->enPassantSquare != 0ULL) {
@@ -183,10 +265,19 @@ static void generateBlackPawnMoves(const Board* board, MoveList* list) {
  */
 static void generatePieceMoves(const Board* board, MoveList* list,
 uint64 attacks, int from) {
+    int piece = board->pieces[from];
     while (attacks) {
         int to = getLSB(attacks);
-        int flag = board->pieces[to] == NO_PIECE ? 0 : CAPTURE_FLAG;
-        addMove(getMove(from, to, board->pieces[to], NO_PIECE, flag), list);
+        int flag, score;
+        if (board->pieces[to] == NO_PIECE) {
+            flag = 0;
+            score = moveScore[piece];
+        } else {
+            flag = CAPTURE_FLAG;
+            score = captureScore[piece][board->pieces[to]];
+        }
+        int move = getMove(from, to, board->pieces[to], NO_PIECE, flag);
+        addMove(move | (score << 25), list);
         attacks &= attacks - 1;
     }
 }
@@ -301,4 +392,5 @@ void generateAllMoves(const Board* board, MoveList* list) {
     }
     uint64 attacks = getKingAttacks(kings);
     generatePieceMoves(board, list, attacks & ~samePieces, getLSB(kings));
+    qsort(list->moves, list->numMoves, sizeof(int), compareMoves);
 }
