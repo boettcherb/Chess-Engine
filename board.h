@@ -42,6 +42,9 @@ typedef struct {
  *                    square. This allows quick access of the piece type of a
  *                    given square and is also updated incrementally with the
  *                    piece bitboards.
+ * material:          Two integers holding the overall material for each side.
+ *                    (Q=9, R=5, B=3, N=3, P=1). First set in setBoardToFen()
+ *                    and updated incrementally in makeMove() and undoMove().
  * sideToMove:        An integer that is either 0 (white) or 1 (black) denoting
  *                    whose turn it is in the current position.
  * ply:               An integer holding the number of half moves made to get
@@ -58,6 +61,7 @@ typedef struct {
     uint64 pieceBitboards[NUM_PIECE_TYPES];
     uint64 colorBitboards[3];
     signed char pieces[64];
+    int material[2];
     int sideToMove;
     int ply;
     int castlePerms;

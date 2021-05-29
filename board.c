@@ -83,6 +83,7 @@ int setBoardToFen(Board* board, const char* fen) {
         int piece = board->pieces[square];
         if (board->pieces[square] != NO_PIECE) {
             assert(piece >= 0 && piece < NUM_PIECE_TYPES);
+            board->material[pieceColor[piece]] += material[piece];
             board->pieceBitboards[piece] |= (1ULL << square);
             board->colorBitboards[pieceColor[piece]] |= (1ULL << square);
             board->colorBitboards[BOTH_COLORS] |= (1ULL << square);
@@ -153,6 +154,7 @@ static void clearPiece(Board* board, int square) {
     board->colorBitboards[pieceColor[piece]] &= clearMask;
     board->colorBitboards[BOTH_COLORS] &= clearMask;
     board->pieces[square] = NO_PIECE;
+    board->material[pieceColor[piece]] -= material[piece];
 }
 
 /*
@@ -175,6 +177,7 @@ static void addPiece(Board* board, int square, int piece) {
     board->colorBitboards[pieceColor[piece]] |= setMask;
     board->colorBitboards[BOTH_COLORS] |= setMask;
     board->pieces[square] = piece;
+    board->material[pieceColor[piece]] += material[piece];
 }
 
 /*

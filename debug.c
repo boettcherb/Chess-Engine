@@ -59,15 +59,20 @@ int checkBoard(const Board* board) {
         getColorBitboard(board, BOTH_COLORS));
     assert(board->ply >= 0);
     // Loop through each piece in the board and count the number of each piece
-    // type. Make sure the numbers of each piece type are valid.
+    // type. Make sure the numbers of each piece type are valid. Also verify
+    // that board->material[] is correct.
     int pieceCounts[NUM_PIECE_TYPES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int materialCounts[2] = { 0, 0 };
     for (int square = 0; square < 64; ++square) {
         if (board->pieces[square] != NO_PIECE) {
             int piece = board->pieces[square];
+            materialCounts[pieceColor[piece]] += material[piece];
             assert(piece >= 0 && piece < NUM_PIECE_TYPES);
             ++pieceCounts[piece];
         }
     }
+    assert(materialCounts[WHITE] == board->material[WHITE]);
+    assert(materialCounts[BLACK] == board->material[BLACK]);
     assert(pieceCounts[WHITE_KING] == 1 && pieceCounts[BLACK_KING] == 1);
     assert(pieceCounts[WHITE_PAWN] <= 8 && pieceCounts[BLACK_PAWN] <= 8);
     assert(pieceCounts[WHITE_KNIGHT] + pieceCounts[WHITE_PAWN] <= 10);
