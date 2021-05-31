@@ -24,6 +24,9 @@
  *     moveScore[WHITE_PAWN] = 27, moveScore[WHITE_KING] = 22
  * Ex: queen promotions are considered before rook promotions: 
  *     promotionScore[WHITE_QUEEN] = 60, promotionScore[WHITE_ROOK] = 19
+ * 
+ * moveScore and promotionScore have NUM_PIECE_TYPES + 4 elements to avoid
+ * a warning for array index out of bounds.
  */
 int captureScore[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
     { 0, 0, 0, 0, 0, 0, 43, 52, 53, 56, 59, 0 },
@@ -39,10 +42,10 @@ int captureScore[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
     { 34, 38, 39, 40, 49, 0, 0, 0, 0, 0, 0, 0 },
     { 30, 31, 32, 33, 54, 0, 0, 0, 0, 0, 0, 0 },
 };
-int moveScore[NUM_PIECE_TYPES] = {
+int moveScore[NUM_PIECE_TYPES + 4] = {
     27, 26, 25, 24, 23, 22, 27, 26, 25, 24, 23, 22,
 };
-int promotionScore[NUM_PIECE_TYPES] = {
+int promotionScore[NUM_PIECE_TYPES + 4] = {
     0, 19, 18, 20, 60, 0, 0, 19, 18, 20, 60, 0,
 };
 
@@ -104,6 +107,7 @@ static void addMove(int move, MoveList* list) {
         case CASTLE_FLAG:     move |= (29 << 25); break;
         case EN_PASSANT_FLAG: move |= (43 << 25); break;
         case PROMOTION_FLAG:
+
             move &= 0x01FFFFFF;
             move += promotionScore[(move >> 16) & 0xF] << 25;
             break;
