@@ -10,11 +10,11 @@ release:
 
 perft:
 	rm -f perft
-	gcc -Wpedantic -Wall -Wextra -O3 $(c_files) perft.c -D NDEBUG -o perft
+	gcc -Wpedantic -Wall -Wextra -O3 $(c_files) perft.c -D NDEBUG -o perft -lpthread -DPERFT_MULTITHREADED
 
 perft_debug:
 	rm -f perft_debug
-	gcc -Wpedantic -Wall -Wextra -Og $(c_files) perft.c debug.c -o perft_debug
+	gcc -Wpedantic -Wall -Wextra -Og $(c_files) perft.c debug.c -o perft_debug -lpthread
 
 clean:
 	rm -f chess_debug chess perft perft_debug

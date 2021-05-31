@@ -3,12 +3,16 @@
 #include "movegen.h"
 #include "magic.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
+#include <string.h>
+#ifdef __GNUC__ && PERFT_MULTITHREADED
+    #include <pthread.h>
+#endif
 
-#define NUM_TESTS 135
-// #define NUM_TESTS 70
+#define NUM_TESTS 134
 
 static const char* PERFT_FENS[NUM_TESTS] = {
     "3qk3/3pp3/8/8/8/8/3PP3/3QK3 b - - 0 1",
@@ -82,7 +86,6 @@ static const char* PERFT_FENS[NUM_TESTS] = {
     "6KQ/8/8/8/8/8/8/7k b - - 0 1",
     "K7/8/8/3Q4/4q3/8/8/7k w - - 0 1",
     "6qk/8/8/8/8/8/8/7K b - - 0 1",
-    "6KQ/8/8/8/8/8/8/7k b - - 0 1",
     "K7/8/8/3Q4/4q3/8/8/7k b - - 0 1",
     "8/8/8/8/8/K7/P7/k7 w - - 0 1",
     "8/8/8/8/8/7K/7P/7k w - - 0 1",
@@ -218,120 +221,209 @@ static const uint64 PERFT_SOLUTIONS[NUM_TESTS][10] = {
     { 1, 19,  275,  5300,  104342,   2161211,   44956585,    974704196,  21232718180, 473590802735 },
     { 1,  2,   36,   143,    3637,     14893,     391507,      1750864,     46863494,    208573802 },
     { 1,  2,   36,   143,    3637,     14893,     391507,      1750864,     46863494,    208573802 },
-    { 1,  6,   35,   495,    8349,    166741,    3370175,            0,            0,            0 },
-    { 1, 22,   43,  1015,    4167,    105749,     419369,            0,            0,            0 },
-    { 1,  2,   36,   143,    3637,     14893,     391507,            0,            0,            0 },
-    { 1,  6,   35,   495,    8349,    166741,    3370175,            0,            0,            0 },
-    { 1,  3,    7,    43,     199,      1347,       6249,            0,            0,            0 },
-    { 1,  3,    7,    43,     199,      1347,       6249,            0,            0,            0 },
-    { 1,  1,    3,    12,      80,       342,       2343,            0,            0,            0 },
-    { 1,  1,    3,    12,      80,       342,       2343,            0,            0,            0 },
-    { 1,  7,   35,   210,    1091,      7028,      34834,            0,            0,            0 },
-    { 1,  1,    3,    12,      80,       342,       2343,            0,            0,            0 },
-    { 1,  1,    3,    12,      80,       342,       2343,            0,            0,            0 },
-    { 1,  3,    7,    43,     199,      1347,       6249,            0,            0,            0 },
-    { 1,  3,    7,    43,     199,      1347,       6249,            0,            0,            0 },
-    { 1,  5,   35,   182,    1091,      5408,      34822,            0,            0,            0 },
-    { 1,  2,    8,    44,     282,      1814,      11848,            0,            0,            0 },
-    { 1,  2,    8,    44,     282,      1814,      11848,            0,            0,            0 },
-    { 1,  3,    9,    57,     360,      1969,      10724,            0,            0,            0 },
-    { 1,  3,    9,    57,     360,      1969,      10724,            0,            0,            0 },
-    { 1,  5,   25,   180,    1294,      8296,      53138,            0,            0,            0 },
-    { 1,  8,   61,   483,    3213,     23599,     157093,            0,            0,            0 },
-    { 1,  8,   61,   411,    3213,     21637,     158065,            0,            0,            0 },
-    { 1,  4,   15,    90,     534,      3450,      20960,            0,            0,            0 },
-    { 1,  3,    9,    57,     360,      1969,      10724,            0,            0,            0 },
-    { 1,  3,    9,    57,     360,      1969,      10724,            0,            0,            0 },
-    { 1,  5,   25,   180,    1294,      8296,      53138,            0,            0,            0 },
-    { 1,  8,   61,   411,    3213,     21637,     158065,            0,            0,            0 },
-    { 1,  8,   61,   483,    3213,     23599,     157093,            0,            0,            0 },
-    { 1,  4,   15,    89,     537,      3309,      21104,            0,            0,            0 },
-    { 1,  4,   19,   117,     720,      4661,      32191,            0,            0,            0 },
-    { 1,  5,   19,   116,     716,      4786,      30980,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  3,   15,    84,     573,      3013,      22886,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4271,      28662,            0,            0,            0 },
-    { 1,  5,   19,   117,     720,      5014,      32167,            0,            0,            0 },
-    { 1,  4,   19,   117,     712,      4658,      30749,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   15,   102,     569,      4337,      22579,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4271,      28662,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   25,   161,    1035,      7574,      55338,            0,            0,            0 },
-    { 1,  5,   25,   161,    1035,      7574,      55338,            0,            0,            0 },
-    { 1,  7,   49,   378,    2902,     24122,     199002,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   22,   139,     877,      6112,      41874,            0,            0,            0 },
-    { 1,  4,   16,   101,     637,      4354,      29679,            0,            0,            0 },
-    { 1,  5,   25,   161,    1035,      7574,      55338,            0,            0,            0 },
-    { 1,  5,   25,   161,    1035,      7574,      55338,            0,            0,            0 },
-    { 1,  7,   49,   378,    2902,     24122,     199002,            0,            0,            0 },
-    { 1, 11,   97,   887,    8048,     90606,    1030499,            0,            0,            0 },
-    { 1, 24,  421,  7421,  124608,   2193768,   37665329,            0,            0,            0 },
-    { 1, 18,  270,  4699,   79355,   1533145,   28859283,            0,            0,            0 },
-    { 1, 24,  496,  9483,  182838,   3605103,   71179139,            0,            0,            0 },
-    { 1, 11,   97,   887,    8048,     90606,    1030499,            0,            0,            0 },
-    { 1, 24,  421,  7421,  124608,   2193768,   37665329,            0,            0,            0 },
-    { 1, 18,  270,  4699,   79355,   1533145,   28859283,            0,            0,            0 },
-    { 1, 24,  496,  9483,  182838,   3605103,   71179139,            0,            0,            0 },
+    { 1,  6,   35,   495,    8349,    166741,    3370175,     68590202,   1389464081,  28177985062 },
+    { 1, 22,   43,  1015,    4167,    105749,     419369,     10830989,     47217486,   1233347730 },
+    { 1,  6,   35,   495,    8349,    166741,    3370175,     68590202,   1389464081,  28177985062 },
+    { 1,  3,    7,    43,     199,      1347,       6249,        45628,       251392,      1901941 },
+    { 1,  3,    7,    43,     199,      1347,       6249,        45628,       251392,      1901941 },
+    { 1,  1,    3,    12,      80,       342,       2343,        12377,        92148,       517366 },
+    { 1,  1,    3,    12,      80,       342,       2343,        12377,        92148,       517366 },
+    { 1,  7,   35,   210,    1091,      7028,      34834,       221609,      1188749,      7618365 },
+    { 1,  1,    3,    12,      80,       342,       2343,        12377,        92148,       517366 },
+    { 1,  1,    3,    12,      80,       342,       2343,        12377,        92148,       517366 },
+    { 1,  3,    7,    43,     199,      1347,       6249,        45628,       251392,      1901941 },
+    { 1,  3,    7,    43,     199,      1347,       6249,        45628,       251392,      1901941 },
+    { 1,  5,   35,   182,    1091,      5408,      34822,       186948,      1187695,      6463459 },
+    { 1,  2,    8,    44,     282,      1814,      11848,        83195,       560569,      4029177 },
+    { 1,  2,    8,    44,     282,      1814,      11848,        83195,       560569,      4029177 },
+    { 1,  3,    9,    57,     360,      1969,      10724,        65679,       400223,      2459780 },
+    { 1,  3,    9,    57,     360,      1969,      10724,        65679,       400223,      2459780 },
+    { 1,  5,   25,   180,    1294,      8296,      53138,       345129,      2237962,     14268054 },
+    { 1,  8,   61,   483,    3213,     23599,     157093,      1144376,      7572916,     53376759 },
+    { 1,  8,   61,   411,    3213,     21637,     158065,      1055522,      7594587,     49800305 },
+    { 1,  4,   15,    90,     534,      3450,      20960,       141778,       887372,      6113978 },
+    { 1,  3,    9,    57,     360,      1969,      10724,        65679,       400223,      2459780 },
+    { 1,  3,    9,    57,     360,      1969,      10724,        65679,       400223,      2459780 },
+    { 1,  5,   25,   180,    1294,      8296,      53138,       345129,      2237962,     14268054 },
+    { 1,  8,   61,   411,    3213,     21637,     158065,      1055522,      7594587,     49800305 },
+    { 1,  8,   61,   483,    3213,     23599,     157093,      1144376,      7572916,     53376759 },
+    { 1,  4,   15,    89,     537,      3309,      21104,       132804,       895301,      5684619 },
+    { 1,  4,   19,   117,     720,      4661,      32191,       220314,      1540250,     10654934 },
+    { 1,  5,   19,   116,     716,      4786,      30980,       204340,      1407832,      9386128 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185098,     16228469 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11763413 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185106,     16217575 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11751696 },
+    { 1,  3,   15,    84,     573,      3013,      22886,       128193,      1047210,      5871381 },
+    { 1,  4,   16,   101,     637,      4271,      28662,       204279,      1457001,     10663527 },
+    { 1,  5,   19,   117,     720,      5014,      32167,       226157,      1536896,     10945231 },
+    { 1,  4,   19,   117,     712,      4658,      30749,       213308,      1396378,      9844588 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185106,     16217575 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11751696 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185098,     16228469 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11763413 },
+    { 1,  5,   15,   102,     569,      4337,      22579,       184873,      1029675,      8995449 },
+    { 1,  4,   16,   101,     637,      4271,      28662,       204279,      1457001,     10663527 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185098,     16228469 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11763413 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       216305,      1569154,     11763413 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11751696 },
+    { 1,  5,   25,   161,    1035,      7574,      55338,       419956,      3167897,     24678359 },
+    { 1,  5,   25,   161,    1035,      7574,      55338,       419956,      3167897,     24664969 },
+    { 1,  7,   49,   378,    2902,     24122,     199002,      1694225,     14281407,    121183847 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185106,     16217575 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11751696 },
+    { 1,  5,   22,   139,     877,      6112,      41874,       304498,      2185098,     16228469 },
+    { 1,  4,   16,   101,     637,      4354,      29679,       216305,      1569154,     11763413 },
+    { 1,  5,   25,   161,    1035,      7574,      55338,       419956,      3167897,     24664969 },
+    { 1,  5,   25,   161,    1035,      7574,      55338,       419956,      3167897,     24678359 },
+    { 1,  7,   49,   378,    2902,     24122,     199002,      1694225,     14281407,    121183847 },
+    { 1, 11,   97,   887,    8048,     90606,    1030499,     13644504,    183653974,   2728354409 },
+    { 1, 24,  421,  7421,  124608,   2193768,   37665329,    690692460,  12436870112, 237497896553 },
+    { 1, 18,  270,  4699,   79355,   1533145,   28859283,    614154982,  12793805091, 294485017090 },
+    { 1, 24,  496,  9483,  182838,   3605103,   71179139,   1482218224,  30927558887,            0 },
+    { 1, 11,   97,   887,    8048,     90606,    1030499,     13644504,    183653974,   2728354409 },
+    { 1, 24,  421,  7421,  124608,   2193768,   37665329,    690692460,  12436870112, 237497896553 },
+    { 1, 18,  270,  4699,   79355,   1533145,   28859283,    614154982,  12793805091, 294485017090 },
+    { 1, 24,  496,  9483,  182838,   3605103,   71179139,   1482218224,  30927558887,            0 },
 };
 
-static uint64 perft(Board* board, int depth) {
+static uint64 curSolutions[10];
+
+#if __GNUC__ && PERFT_MULTITHREADED
+
+#define MAX_THREADS 128
+
+static uint64 threadSolutions[MAX_THREADS][10];
+static pthread_t threadIDs[MAX_THREADS];
+static Board boards[MAX_THREADS];
+static int maxDepthMT;
+
+static void perft(int depth, const int threadIndex) {
+    assert(checkBoard(&boards[threadIndex]));
+    ++threadSolutions[threadIndex][depth];
+    if (depth >= maxDepthMT) {
+        return;
+    }
+    MoveList list;
+    generateAllMoves(&boards[threadIndex], &list);
+    for (int moveNum = 0; moveNum < list.numMoves; ++moveNum) {
+        if (makeMove(&boards[threadIndex], list.moves[moveNum])) {
+            perft(depth + 1, threadIndex);
+            undoMove(&boards[threadIndex]);
+        }
+    }
+}
+
+static void* threadStart(void* args) {
+    const int threadIndex = ((int*) args)[0];
+    //printf("created thread %d\n", threadIndex);
+    perft(1, threadIndex);
+    return NULL;
+}
+
+static void perftMultithreaded(const Board* board, const int maxDepth) {
+    memset(threadSolutions, 0, sizeof(threadSolutions));
+    for (int i = 0; i < MAX_THREADS; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            assert(threadSolutions[i][j] == 0);
+        }
+    }
+    for (int i = 0; i < 10; ++i) {
+        assert(curSolutions[i] == 0);
+    }
+    for (int i = 0; i < MAX_THREADS; ++i) {
+        memcpy(&boards[i], board, sizeof(Board));
+        assert(checkBoard(&boards[i]));
+    }
+    int arg[MAX_THREADS];
+    int created[MAX_THREADS] = { 0 };
+    maxDepthMT = maxDepth;
+    MoveList list; 
+    generateAllMoves(board, &list);
+    for (int i = 0; i < list.numMoves; ++i) {
+        if (!makeMove(&boards[i], list.moves[i])) {
+            continue;
+        }
+        created[i] = 1;
+        arg[i] = i;
+        pthread_create(&threadIDs[i], NULL, threadStart, (void*) (&arg[i]));
+    }
+    for (int i = 0; i < list.numMoves; ++i) {
+        if (created[i]) {
+            pthread_join(threadIDs[i], NULL);
+            for (int j = 0; j <= maxDepth; ++j) {
+                curSolutions[j] += threadSolutions[i][j];
+            }
+        }
+    }
+}
+
+#else
+
+static void perft(Board* board, int depth, int maxDepth) {
     assert(checkBoard(board));
-    if (depth == 0) {
-        return 1;
+    ++curSolutions[depth];
+    if (depth >= maxDepth) {
+        return;
     }
     MoveList list;
     generateAllMoves(board, &list);
-    uint64 res = 0;
     for (int moveNum = 0; moveNum < list.numMoves; ++moveNum) {
         if (makeMove(board, list.moves[moveNum])) {
-            res += perft(board, depth - 1);
+            perft(board, depth + 1, maxDepth);
             undoMove(board);
         }
     }
-    return res;
+}
+
+#endif
+
+static int findMaxDepth(int test) {
+    int depth = 9;
+    while (PERFT_SOLUTIONS[test][depth] == 0) {
+        --depth;
+    }
+    return depth;
 }
 
 static void perftTest(int maxDepth) {
     uint64 totalTime = 0, totalLeafNodes = 0;
-    int passed = 0;
+    int numPassed = 0;
     for (int test = 0; test < NUM_TESTS; ++test) {
-        int testPassed = 1;
         puts("----------------------------------------------------------------------------------------");
         printf("%d) FEN: \"%s\"\n", test + 1, PERFT_FENS[test]);
+        Board board;
+        if (!setBoardToFen(&board, PERFT_FENS[test])) {
+            puts("ERROR: Invalid FEN");
+            return;
+        }
+        memset(curSolutions, 0, sizeof(curSolutions));
+        int maxTestDepth = findMaxDepth(test);
+        if (maxTestDepth < maxDepth) {
+            maxDepth = maxTestDepth;
+        }
+        int passed = 1;
+        clock_t start = clock();
+#if __GNUC__ && PERFT_MULTITHREADED
+        perftMultithreaded(&board, maxDepth);
+#else
+        perft(&board, 0, maxDepth);
+#endif
+        uint64 time = (uint64) ((((double) clock()) - ((double) start)) / CLOCKS_PER_SEC * 1000.0);
         for (int depth = 1; depth <= maxDepth; ++depth) {
-            if (PERFT_SOLUTIONS[test][depth] == 0) { // no data for this depth
-                continue;
-            }
-            Board board;
-            setBoardToFen(&board, PERFT_FENS[test]);
-            clock_t start = clock();
-            uint64 res = perft(&board, depth);
-            uint64 time = (uint64) ((((double) clock()) - ((double) start)) / CLOCKS_PER_SEC * 1000.0);
-            printf("depth: %d | res: %10lld | time: %7lld ms | ", depth, res, time);
-            if (res == PERFT_SOLUTIONS[test][depth]) {
+            printf("depth: %d | test result: %13lld | ", depth, curSolutions[depth]);
+            if (curSolutions[depth] == PERFT_SOLUTIONS[test][depth]) {
                 puts("passed");
             } else {
                 printf("----FAILED---- answer: %lld\n", PERFT_SOLUTIONS[test][depth]);
-                testPassed = 0;
+                passed = 0;
             }
-            totalLeafNodes += res;
-            totalTime += time;
         }
-        if (testPassed) {
-            ++passed;
-        }
+        printf("total time: %lld ms\n", time);
+        totalLeafNodes += curSolutions[maxDepth];
+        totalTime += time;
+        numPassed += passed;
     }
     if (totalTime == 0) {
         printf("This engine visited %lld leaf nodes in < 1 millisecond.\n", totalLeafNodes);
@@ -340,44 +432,10 @@ static void perftTest(int maxDepth) {
         printf("This engine visited %lld leaf nodes in %lld milliseconds.\n", totalLeafNodes, totalTime);
         printf("Average: %lld Leaf Nodes / Second\n", totalLeafNodes * 1000 / totalTime);
     }
-    printf("Passed: %d / %d\n", passed, NUM_TESTS);
+    printf("Passed: %d / %d\n", numPassed, NUM_TESTS);
     fflush(stdout);
 }
 
-/*
-static void perftTestDivide(int test, int depth) {
-    if (test <= 0 || test > NUM_TESTS || depth <= 0 || depth > 9) {
-        printf("Invalid Arguments to perftTestDivide\n - test must be in range [1, NUM_TESTS]"
-        "\n - depth must be in the range [1, 9]\n");
-        return;
-    }
-    puts("----------------------------------------------------------------------------------------"), 
-    printf("%d) FEN: \"%s\"\nSearching to depth %d\n", test, PERFT_FENS[test - 1], depth);
-    uint64 testNodes = 0;
-    Board board;
-    setBoardToFen(&board, PERFT_FENS[test - 1]);
-    printBoard(&board);
-    MoveList list;
-    generateAllMoves(&board, &list);
-    printf("Depth 1 moves: %d\n", list.numMoves);
-    for (int moveNum = 1; moveNum <= list.numMoves; ++moveNum) {
-        char moveString[6];
-        getMoveString(list.moves[moveNum - 1], moveString);
-        if (!makeMove(&board, list.moves[moveNum - 1])) {
-            printf("%2d) %5s | Illegal Move\n", moveNum, moveString);
-            continue;
-        }
-        clock_t start = clock();
-        uint64 res = perft(&board, depth - 1);
-        uint64 time = (uint64) ((((double) clock()) - ((double) start)) / CLOCKS_PER_SEC * 1000.0);
-        printf("%2d) %5s | moves: %7lld | time: %7lld ms\n", moveNum, moveString, res, time);
-        undoMove(&board);
-        testNodes += res;
-    }
-    printf("Complete! Visited %lld total leaf nodes\n", testNodes);
-    fflush(stdout);
-}
-*/
 int main(int argc, char** argv) {
     if (argc != 2 || argv[1][1] || argv[1][0] == '0' || !isdigit(argv[1][0])) {
         printf("Usage: %s <max depth 1-9>\n", &argv[0][2]);
@@ -387,7 +445,6 @@ int main(int argc, char** argv) {
     printf("max depth: %d\n", maxDepth);
     initBishopAttackTable();
     initRookAttackTable();
-    //perftTestDivide(1, 1);
     perftTest(maxDepth);
     return 0;
 }
