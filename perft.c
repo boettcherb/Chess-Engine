@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <string.h>
-#ifdef __GNUC__ && PERFT_MULTITHREADED
+#if __GNUC__ && PERFT_MULTITHREADED
     #include <pthread.h>
 #endif
 

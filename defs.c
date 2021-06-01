@@ -45,10 +45,10 @@ int getLSB(uint64 bitboard) {
  * return:     The index of the given bitboard's most significant bit.
  */
 int getMSB(uint64 bitboard) {
+    assert(bitboard != 0);
 #ifdef __GNUC__
     return 63 - __builtin_clzll(bitboard);
 #else
-    assert(bitboard != 0);
     int index = 63;
     while (!(bitboard & 0x8000000000000000)) {
         bitboard <<= 1;

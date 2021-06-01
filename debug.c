@@ -212,13 +212,20 @@ int validMove(int move) {
 void printPieces(const Board* board) {
     assert(board != NULL);
     const char* pieceChar = "PNBRQKpnbrqk";
+    int rank = 8;
     for (int square = 56; square >= 0; square -= 8) {
+        printf("%d  ", rank--);
         for (int fileIndex = 0; fileIndex < 8; ++fileIndex) {
             int piece = board->pieces[square + fileIndex];
             printf("%c ", piece == NO_PIECE ? '-' : pieceChar[piece]);
         }
         putchar('\n');
     }
+    printf("\n  ");
+    for (int i = 0; i < 8; ++i) {
+        printf(" %c", (char) ('a' + i));
+    }
+    putchar('\n');
 }
 
 /*
