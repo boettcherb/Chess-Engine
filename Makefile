@@ -1,4 +1,4 @@
-c_files = defs.c board.c movegen.c attack.c magic.c
+c_files = defs.c board.c movegen.c attack.c magic.c hash.c
 
 debug:
 	rm -f chess_debug

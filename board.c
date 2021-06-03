@@ -1,6 +1,7 @@
 #include "board.h"
 #include "defs.h"
 #include "attack.h"
+#include "hash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -132,6 +133,7 @@ int setBoardToFen(Board* board, const char* fen) {
     }
     board->ply = 0;
 
+    board->positionKey = generatePositionKey(board);
     assert(checkBoard(board));
     return 1;
 }
@@ -154,6 +156,7 @@ static void clearPiece(Board* board, int square) {
     board->colorBitboards[pieceColor[piece]] &= clearMask;
     board->colorBitboards[BOTH_COLORS] &= clearMask;
     board->pieces[square] = NO_PIECE;
+    board->positionKey ^= getPieceHashKey(piece, square);
     board->material[pieceColor[piece]] -= material[piece];
 }
 
@@ -177,6 +180,7 @@ static void addPiece(Board* board, int square, int piece) {
     board->colorBitboards[pieceColor[piece]] |= setMask;
     board->colorBitboards[BOTH_COLORS] |= setMask;
     board->pieces[square] = piece;
+    board->positionKey ^= getPieceHashKey(piece, square);
     board->material[pieceColor[piece]] += material[piece];
 }
 
@@ -208,6 +212,8 @@ static void movePiece(Board* board, int from, int to) {
     board->colorBitboards[BOTH_COLORS] |= setMask;
     board->pieces[to] = piece;
     board->pieces[from] = NO_PIECE;
+    board->positionKey ^= getPieceHashKey(piece, from);
+    board->positionKey ^= getPieceHashKey(piece, to);
 }
 
 /*
@@ -258,9 +264,16 @@ int makeMove(Board* board, int move) {
     int to = (move >> 6) & 0x3F;
     board->history[board->ply].move = move;
     board->history[board->ply].castlePerms = board->castlePerms;
-    board->history[board->ply++].enPassantSquare = board->enPassantSquare;
-    board->enPassantSquare = 0ULL;
+    board->history[board->ply].enPassantSquare = board->enPassantSquare;
+    board->history[board->ply++].positionKey = board->positionKey;
+    if (board->enPassantSquare != 0ULL) {
+        int square = getLSB(board->enPassantSquare);
+        board->positionKey ^= getEnPassantHashKey(square);
+        board->enPassantSquare = 0ULL;
+    }
+    board->positionKey ^= getCastleHashKey(board->castlePerms);
     board->castlePerms &= castlePerms[from] & castlePerms[to];
+    board->positionKey ^= getCastleHashKey(board->castlePerms);
     switch (move & MOVE_FLAGS) {
         case CAPTURE_FLAG:
             clearPiece(board, to);
@@ -283,6 +296,7 @@ int makeMove(Board* board, int move) {
             break;
         case PAWN_START_FLAG:
             board->enPassantSquare = 1ULL << ((to + from) / 2);
+            board->positionKey ^= getEnPassantHashKey((to + from) / 2);
             break;
         case EN_PASSANT_FLAG:
             clearPiece(board, to + (board->sideToMove * 16 - 8));
@@ -291,6 +305,7 @@ int makeMove(Board* board, int move) {
     movePiece(board, from, to);
     int king = board->sideToMove == WHITE ? WHITE_KING : BLACK_KING;
     board->sideToMove = !board->sideToMove;
+    board->positionKey ^= getSideHashKey();
     assert(checkBoard(board));
     if (!squareAttacked(board, board->pieceBitboards[king], board->sideToMove)) {
         return 1;
@@ -345,5 +360,6 @@ void undoMove(Board* board) {
     }
     board->castlePerms = board->history[board->ply].castlePerms;
     board->enPassantSquare = board->history[board->ply].enPassantSquare;
+    board->positionKey = board->history[board->ply].positionKey;
     assert(checkBoard(board));
 }

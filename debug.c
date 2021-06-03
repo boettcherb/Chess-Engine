@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "board.h"
 #include "movegen.h"
+#include "hash.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -52,6 +53,7 @@ static uint64 getColorBitboard(const Board* board, int color) {
  */
 int checkBoard(const Board* board) {
     assert(board != NULL);
+    assert(board->positionKey == generatePositionKey(board));
     assert(board->sideToMove == WHITE || board->sideToMove == BLACK);
     assert(board->colorBitboards[WHITE] == getColorBitboard(board, WHITE));
     assert(board->colorBitboards[BLACK] == getColorBitboard(board, BLACK));

@@ -1,4 +1,3 @@
-
 #ifndef BOARD_H_INCLUDED
 #define BOARD_H_INCLUDED
 
@@ -18,11 +17,14 @@
  * castlePerms:       A combination of bit flags denoting which castling moves
  *                    are legal. Ex: If (castlePerms & CASTLE_WQ != 0), then
  *                    white can castle queenside in the current position.
+ * positionKey:       A 64-bit integer that is unique to the current position.
+ *                    This value is used to check for 3-fold repetitions.
  */
 typedef struct {
     int move;
     int castlePerms;
     uint64 enPassantSquare;
+    uint64 positionKey;
 } PreviousMove;
 
 /*
@@ -42,6 +44,8 @@ typedef struct {
  *                    square. This allows quick access of the piece type of a
  *                    given square and is also updated incrementally with the
  *                    piece bitboards.
+ * positionKey:       A 64-bit integer that is unique to the current position.
+ *                    This value is used to check for 3-fold repetitions.
  * material:          Two integers holding the overall material for each side.
  *                    (Q=9, R=5, B=3, N=3, P=1). First set in setBoardToFen()
  *                    and updated incrementally in makeMove() and undoMove().
@@ -61,6 +65,7 @@ typedef struct {
     uint64 pieceBitboards[NUM_PIECE_TYPES];
     uint64 colorBitboards[3];
     signed char pieces[64];
+    uint64 positionKey;
     int material[2];
     int sideToMove;
     int ply;
