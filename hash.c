@@ -85,24 +85,75 @@ uint64 generatePositionKey(const Board* board) {
 }
 
 /*
- * Retrieve the 
+ * Retrieve the hash key that is used to factor in which side it is to move.
+ * When it is white's move, the hash key is xor-ed into the board's position
+ * key, and when it is black's move it is removed. This way, if 2 boards have
+ * the same piece layouts but one has white to move and the other has black
+ * to move, they will have a different position key.
+ * 
+ * return:      The side hash key as a 64-bit integer.
  */
 uint64 getSideHashKey() {
     return sideKey;
 }
 
+/*
+ * Retrieve the hash key that is used to mark that a certain piece is on a
+ * certain square. There are 64 * 12 = 768 different piece hash keys: one for
+ * the 12 piece types on each of the 64 squares. These hash keys are used to
+ * mark in the board's position key which pieces are on which squares so that
+ * if 2 boards have different piece layouts, their position keys will also be
+ * different.
+ * 
+ * piece:       The piece type that is on the given 'square'. Must be a valid   
+ *              piece type.
+ * square:      The square that the given 'piece' is on. An integer in the 
+ *              range [0-64).
+ * 
+ * return:      The piece hash key for a piece of type 'piece' on the given
+ *              'square' as a 64-bit integer.
+ */
 uint64 getPieceHashKey(int piece, int square) {
     assert(piece >= WHITE_PAWN && piece <= BLACK_KING);
     assert(square >= 0 && square < 64);
     return pieceKeys[piece][square];
 }
 
+/*
+ * Retrieve the hash key that is used to mark an en passant capture is possible
+ * on the given 'square'. There are 64 en passant hash keys, one for each
+ * square, although in reality only 16 of these will ever be used (the keys for
+ * the 3rd and 6th ranks because these are the only squares where en passant
+ * captures are possible). If 2 boards have the same piece layouts but on one
+ * board an en passant capture is possible, their 2 position keys will be
+ * different.
+ * 
+ * square:      The square where an en passant capture is possible and whose en
+ *              passant hash key we want to retrieve.
+ * 
+ * return:      The en passant hash key for an en passant move on the given
+ *              'square' as a 64-bit integer.
+ */
 uint64 getEnPassantHashKey(int square) {
     assert(square >= 0 && square < 64);
+    assert((1ULL << square) & 0x0000FF0000FF0000);
     return enPassantKeys[square];
 }
 
+/*
+ * Retrieve the hash key that is used to mark the castling permissions of a
+ * chessboard. There are 16 castle hash keys, one for each of the 16 possible
+ * permutations of castling permissions. If 2 boards have the same piece
+ * layouts but different castling permissions, their 2 position keys will be
+ * different.
+ * 
+ * castlePerm:  The current castling permissions of a chessboard. Only the 4
+ *              least significant bits can ever be 1.
+ * 
+ * return:      The castle hash key for the given castling permissions as a
+ *              64-bit integer.
+ */
 uint64 getCastleHashKey(int castlePerm) {
-    assert(castlePerm >= 0 && castlePerm < 16);
+    assert((castlePerm & 0xFFFFFFF0) == 0);
     return castleKeys[castlePerm];
 }
