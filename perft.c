@@ -300,7 +300,6 @@ static Board boards[MAX_THREADS];
 static int maxDepthMT;
 
 static void perft(int depth, const int threadIndex) {
-    assert(checkBoard(&boards[threadIndex]));
     ++threadSolutions[threadIndex][depth];
     if (depth >= maxDepthMT) {
         return;
@@ -317,7 +316,6 @@ static void perft(int depth, const int threadIndex) {
 
 static void* threadStart(void* args) {
     const int threadIndex = ((int*) args)[0];
-    //printf("created thread %d\n", threadIndex);
     perft(1, threadIndex);
     return NULL;
 }
@@ -325,16 +323,7 @@ static void* threadStart(void* args) {
 static void perftMultithreaded(const Board* board, const int maxDepth) {
     memset(threadSolutions, 0, sizeof(threadSolutions));
     for (int i = 0; i < MAX_THREADS; ++i) {
-        for (int j = 0; j < 10; ++j) {
-            assert(threadSolutions[i][j] == 0);
-        }
-    }
-    for (int i = 0; i < 10; ++i) {
-        assert(curSolutions[i] == 0);
-    }
-    for (int i = 0; i < MAX_THREADS; ++i) {
         memcpy(&boards[i], board, sizeof(Board));
-        assert(checkBoard(&boards[i]));
     }
     int arg[MAX_THREADS];
     int created[MAX_THREADS] = { 0 };
@@ -342,12 +331,11 @@ static void perftMultithreaded(const Board* board, const int maxDepth) {
     MoveList list; 
     generateAllMoves(board, &list);
     for (int i = 0; i < list.numMoves; ++i) {
-        if (!makeMove(&boards[i], list.moves[i])) {
-            continue;
+        if (makeMove(&boards[i], list.moves[i])) {
+            created[i] = 1;
+            arg[i] = i;
+            pthread_create(&threadIDs[i], NULL, threadStart, (void*) &arg[i]);
         }
-        created[i] = 1;
-        arg[i] = i;
-        pthread_create(&threadIDs[i], NULL, threadStart, (void*) (&arg[i]));
     }
     for (int i = 0; i < list.numMoves; ++i) {
         if (created[i]) {
@@ -388,8 +376,14 @@ static int findMaxDepth(int test) {
 }
 
 static void perftTest(int maxDepth) {
-    uint64 totalTime = 0, totalLeafNodes = 0;
+    uint64 totalLeafNodes = 0;
     int numPassed = 0;
+#if __GNUC__ && PERFT_MULTITHREADED
+    time_t startTime = time(NULL);
+#else
+    uint64 totalTime = 0;
+#endif
+
     for (int test = 0; test < NUM_TESTS; ++test) {
         puts("----------------------------------------------------------------------------------------");
         printf("%d) FEN: \"%s\"\n", test + 1, PERFT_FENS[test]);
@@ -404,13 +398,13 @@ static void perftTest(int maxDepth) {
             maxDepth = maxTestDepth;
         }
         int passed = 1;
-        clock_t start = clock();
 #if __GNUC__ && PERFT_MULTITHREADED
         perftMultithreaded(&board, maxDepth);
 #else
+        clock_t start = clock();
         perft(&board, 0, maxDepth);
-#endif
         uint64 time = (uint64) ((((double) clock()) - ((double) start)) / CLOCKS_PER_SEC * 1000.0);
+#endif
         for (int depth = 1; depth <= maxDepth; ++depth) {
             printf("depth: %d | test result: %13lld | ", depth, curSolutions[depth]);
             if (curSolutions[depth] == PERFT_SOLUTIONS[test][depth]) {
@@ -420,11 +414,16 @@ static void perftTest(int maxDepth) {
                 passed = 0;
             }
         }
-        printf("total time: %lld ms\n", time);
         totalLeafNodes += curSolutions[maxDepth];
-        totalTime += time;
         numPassed += passed;
+#if __GNUC__ && PERFT_MULTITHREADED
     }
+    uint64 totalTime = (uint64) (time(NULL) - startTime) * 1000;
+#else
+        printf("total time: %lld ms\n", time);
+        totalTime += time;
+    }
+#endif
     if (totalTime == 0) {
         printf("This engine visited %lld leaf nodes in < 1 millisecond.\n", totalLeafNodes);
         printf("Average: > %lld Leaf Nodes / Second\n", totalLeafNodes * 1000);
