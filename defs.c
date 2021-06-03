@@ -1,4 +1,6 @@
 #include "defs.h"
+#include "magic.h"
+#include "hash.h"
 
 const int pieceColor[NUM_PIECE_TYPES] = {
     WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
@@ -11,6 +13,16 @@ const int pieces[BOTH_COLORS][NUM_PIECE_TYPES] = {
 };
 
 const int material[NUM_PIECE_TYPES] = { 1, 3, 3, 5, 9, 0, 1, 3, 3, 5, 9, 0 };
+
+/*
+ * Call this function once at the start of the program to initialize the bishop
+ * and rook attack tables and to initialize the hash keys.
+ */
+void initializeAll() {
+    initBishopAttackTable();
+    initRookAttackTable();
+    initHashKeys();
+}
 
 /*
  * Retrieve the index of the given bitboard's least significant bit. Ex: 

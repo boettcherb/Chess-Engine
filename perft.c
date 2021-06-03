@@ -2,7 +2,6 @@
 #include "board.h"
 #include "movegen.h"
 #include "magic.h"
-#include "hash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -444,9 +443,7 @@ int main(int argc, char** argv) {
     }
     int maxDepth = argv[1][0] - '0';
     printf("max depth: %d\n", maxDepth);
-    initBishopAttackTable();
-    initRookAttackTable();
-    initHashKeys();
+    initializeAll();
     perftTest(maxDepth);
     return 0;
 }

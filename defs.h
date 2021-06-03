@@ -49,6 +49,7 @@ extern const int pieceColor[NUM_PIECE_TYPES];
 extern const int pieces[BOTH_COLORS][NUM_PIECE_TYPES];
 extern const int material[NUM_PIECE_TYPES];
 
+void initializeAll();
 int getLSB(uint64 bitboard);
 int getMSB(uint64 bitboard);
 int countBits(uint64 bitboard);
