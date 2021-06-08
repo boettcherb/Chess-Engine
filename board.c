@@ -124,7 +124,13 @@ int setBoardToFen(Board* board, const char* fen) {
         board->enPassantSquare = 1ULL << (file * 8 + rank);
     }
 
-    // TODO: fifty move rule
+    // fifty move rule
+    if (fiftyMoveCount < 0 || fiftyMoveCount > 100) {
+        puts("Error: setBoardToFen: invalid half move clock (fifty move count "
+        "must be between 0 and 100 inclusive)");
+        return 0;
+    }
+    board->fiftyMoveCount = fiftyMoveCount;
 
     // move number
     if (moveNumber < 1) {
@@ -265,11 +271,18 @@ int makeMove(Board* board, int move) {
     board->history[board->ply].move = move;
     board->history[board->ply].castlePerms = board->castlePerms;
     board->history[board->ply].enPassantSquare = board->enPassantSquare;
+    board->history[board->ply].fiftyMoveCount = board->fiftyMoveCount;
     board->history[board->ply++].positionKey = board->positionKey;
     if (board->enPassantSquare != 0ULL) {
         int square = getLSB(board->enPassantSquare);
         board->positionKey ^= getEnPassantHashKey(square);
         board->enPassantSquare = 0ULL;
+    }
+    if ((move & CAPTURE_FLAG) || board->pieces[from] == WHITE_PAWN
+        || board->pieces[from] == BLACK_PAWN) {
+        board->fiftyMoveCount = 0;
+    } else {
+        ++board->fiftyMoveCount;
     }
     board->positionKey ^= getCastleHashKey(board->castlePerms);
     board->castlePerms &= castlePerms[from] & castlePerms[to];
@@ -303,9 +316,9 @@ int makeMove(Board* board, int move) {
             break;
     }
     movePiece(board, from, to);
+    board->positionKey ^= getSideHashKey();
     int king = board->sideToMove == WHITE ? WHITE_KING : BLACK_KING;
     board->sideToMove = !board->sideToMove;
-    board->positionKey ^= getSideHashKey();
     assert(checkBoard(board));
     if (!squareAttacked(board, board->pieceBitboards[king], board->sideToMove)) {
         return 1;
@@ -359,6 +372,7 @@ void undoMove(Board* board) {
             break;
     }
     board->castlePerms = board->history[board->ply].castlePerms;
+    board->fiftyMoveCount = board->history[board->ply].fiftyMoveCount;
     board->enPassantSquare = board->history[board->ply].enPassantSquare;
     board->positionKey = board->history[board->ply].positionKey;
     assert(checkBoard(board));

@@ -12,17 +12,20 @@
  * 
  * move:              A 64-bit integer containing most of the necessary
  *                    information about the move.
- * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
- *                    current side to move could attack by the en passant rule.
  * castlePerms:       A combination of bit flags denoting which castling moves
  *                    are legal. Ex: If (castlePerms & CASTLE_WQ != 0), then
  *                    white can castle queenside in the current position.
+ * fiftyMoveCount:    An integer holding the number of half moves since the
+ *                    last capture or pawn move. Used for the fifty move rule.
+ * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
+ *                    current side to move could attack by the en passant rule.
  * positionKey:       A 64-bit integer that is unique to the current position.
  *                    This value is used to check for 3-fold repetitions.
  */
 typedef struct {
     int move;
     int castlePerms;
+    int fiftyMoveCount;
     uint64 enPassantSquare;
     uint64 positionKey;
 } PreviousMove;
@@ -56,6 +59,8 @@ typedef struct {
  * castlePerms:       A combination of bit flags denoting which castling moves
  *                    are legal. Ex: If (castlePerms & CASTLE_WQ != 0), then
  *                    white can castle queenside in the current position.
+ * fiftyMoveCount:    An integer holding the number of half moves since the
+ *                    last capture or pawn move. Used for the fifty move rule.
  * enPassantSquare:   A bitboard with only 1 bit set to 1: the square that the
  *                    current side to move could attack by the en passant rule.
  * history:           An array of PreviousMove structs that hold info about all
@@ -70,6 +75,7 @@ typedef struct {
     int sideToMove;
     int ply;
     int castlePerms;
+    int fiftyMoveCount;
     uint64 enPassantSquare;
     PreviousMove history[MAX_GAME_MOVES];
 } Board;
