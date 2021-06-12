@@ -18,35 +18,35 @@
  * 
  * Ex: A pawn move to capture a queen will be considered before a knight move
  * to capture a pawn:
- *     captureScore[WHITE_PAWN][BLACK_QUEEN] = 59
- *     captureScore[WHITE_KNIGHT][BLACK_PAWN] = 37
+ *     captureScore[WHITE_PAWN][BLACK_QUEEN] = 40
+ *     captureScore[WHITE_KNIGHT][BLACK_PAWN] = 18
  * Ex: pawn moves are considered before king moves:
- *     moveScore[WHITE_PAWN] = 27, moveScore[WHITE_KING] = 22
+ *     moveScore[WHITE_PAWN] = 8, moveScore[WHITE_KING] = 3
  * Ex: queen promotions are considered before rook promotions: 
- *     promotionScore[WHITE_QUEEN] = 60, promotionScore[WHITE_ROOK] = 19
+ *     promotionScore[WHITE_QUEEN] = 40, promotionScore[WHITE_ROOK] = 1
  * 
  * moveScore and promotionScore have NUM_PIECE_TYPES + 4 elements to avoid
  * a warning for array index out of bounds.
  */
-int captureScore[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
-    { 0, 0, 0, 0, 0, 0, 43, 52, 53, 56, 59, 0 },
-    { 0, 0, 0, 0, 0, 0, 37, 46, 47, 51, 58, 0 },
-    { 0, 0, 0, 0, 0, 0, 36, 44, 45, 50, 57, 0 },
-    { 0, 0, 0, 0, 0, 0, 35, 41, 42, 48, 55, 0 },
-    { 0, 0, 0, 0, 0, 0, 34, 38, 39, 40, 49, 0 },
-    { 0, 0, 0, 0, 0, 0, 30, 31, 32, 33, 54, 0 },
-    { 43, 52, 53, 56, 59, 0, 0, 0, 0, 0, 0, 0 },
-    { 37, 46, 47, 51, 58, 0, 0, 0, 0, 0, 0, 0 },
-    { 36, 44, 45, 50, 57, 0, 0, 0, 0, 0, 0, 0 },
-    { 35, 41, 42, 48, 55, 0, 0, 0, 0, 0, 0, 0 },
-    { 34, 38, 39, 40, 49, 0, 0, 0, 0, 0, 0, 0 },
-    { 30, 31, 32, 33, 54, 0, 0, 0, 0, 0, 0, 0 },
+static int captureScore[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
+    { 0, 0, 0, 0, 0, 0, 24, 33, 34, 37, 40, 0 },
+    { 0, 0, 0, 0, 0, 0, 18, 27, 28, 32, 39, 0 },
+    { 0, 0, 0, 0, 0, 0, 17, 25, 26, 31, 38, 0 },
+    { 0, 0, 0, 0, 0, 0, 16, 22, 23, 29, 36, 0 },
+    { 0, 0, 0, 0, 0, 0, 15, 19, 20, 21, 30, 0 },
+    { 0, 0, 0, 0, 0, 0, 11, 12, 13, 14, 35, 0 },
+    { 24, 33, 34, 37, 40, 0, 0, 0, 0, 0, 0, 0 },
+    { 18, 27, 28, 32, 39, 0, 0, 0, 0, 0, 0, 0 },
+    { 17, 25, 26, 31, 38, 0, 0, 0, 0, 0, 0, 0 },
+    { 16, 22, 23, 29, 36, 0, 0, 0, 0, 0, 0, 0 },
+    { 15, 19, 20, 21, 30, 0, 0, 0, 0, 0, 0, 0 },
+    { 11, 12, 13, 14, 35, 0, 0, 0, 0, 0, 0, 0 },
 };
-int moveScore[NUM_PIECE_TYPES + 4] = {
-    27, 26, 25, 24, 23, 22, 27, 26, 25, 24, 23, 22,
+static int moveScore[NUM_PIECE_TYPES + 4] = {
+    8, 7, 6, 5, 4, 3, 8, 7, 6, 5, 4, 3
 };
-int promotionScore[NUM_PIECE_TYPES + 4] = {
-    0, 19, 18, 20, 60, 0, 0, 19, 18, 20, 60, 0,
+static int promotionScore[NUM_PIECE_TYPES + 4] = {
+    0, 1, 1, 1, 40, 0, 0, 1, 1, 1, 40, 0,
 };
 
 /*
@@ -63,7 +63,7 @@ int promotionScore[NUM_PIECE_TYPES + 4] = {
  *          will be placed before the first move in the sorted list, and vice
  *          versa.
  */
-int compareMoves(const void* m1, const void* m2) {
+static int compareMoves(const void* m1, const void* m2) {
     int move1 = *((int*) m1);
     int move2 = *((int*) m2);
     return (move2 >> 25) - (move1 >> 25);
@@ -102,18 +102,17 @@ static int getMove(int from, int to, int captured, int promoted, int flags) {
  */
 static void addMove(int move, MoveList* list) {
     assert(list->numMoves >= 0);
+    int capture;
     switch (move & MOVE_FLAGS) {
-        case PAWN_START_FLAG: move |= (28 << 25); break;
-        case CASTLE_FLAG:     move |= (29 << 25); break;
-        case EN_PASSANT_FLAG: move |= (43 << 25); break;
+        case PAWN_START_FLAG: move |= (9 << 25); break;
+        case CASTLE_FLAG: move |= (10 << 25); break;
+        case EN_PASSANT_FLAG: move |= (24 << 25); break;
         case PROMOTION_FLAG:
-
-            move &= 0x01FFFFFF;
-            move += promotionScore[(move >> 16) & 0xF] << 25;
-            break;
         case CAPTURE_AND_PROMOTION_FLAG:
+            // intentional fall through
+            capture = (move & CAPTURE_FLAG) != 0;
             move &= 0x01FFFFFF;
-            move += (promotionScore[(move >> 16) & 0xF] + 1) << 25;
+            move += (promotionScore[(move >> 16) & 0xF] + capture) << 25;
             
     }
     assert(validMove(move));
