@@ -35,7 +35,7 @@ void initializeAll() {
  */
 int getLSB(uint64 bitboard) {
     assert(bitboard != 0);
-#ifdef __GNUC__
+#ifdef COMPILER_GCC
     return __builtin_ctzll(bitboard);
 #else
     int index = 0;
@@ -58,7 +58,7 @@ int getLSB(uint64 bitboard) {
  */
 int getMSB(uint64 bitboard) {
     assert(bitboard != 0);
-#ifdef __GNUC__
+#ifdef COMPILER_GCC
     return 63 - __builtin_clzll(bitboard);
 #else
     int index = 63;
@@ -79,7 +79,7 @@ int getMSB(uint64 bitboard) {
  * return:     The number of bits in the bitboard that are set to 1.
  */
 int countBits(uint64 bitboard) {
-#ifdef __GNUC__
+#ifdef COMPILER_GCC
     return __builtin_popcountll(bitboard);
 #else
     int bits;

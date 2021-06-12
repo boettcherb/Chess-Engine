@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <string.h>
-#if __GNUC__ && PERFT_MULTITHREADED
+#if COMPILER_GCC && PERFT_MULTITHREADED
     #include <pthread.h>
 #endif
 
@@ -290,7 +290,7 @@ static const uint64 PERFT_SOLUTIONS[NUM_TESTS][10] = {
 
 static uint64 curSolutions[10];
 
-#if __GNUC__ && PERFT_MULTITHREADED
+#if COMPILER_GCC && PERFT_MULTITHREADED
 
 #define MAX_THREADS 128
 
@@ -378,7 +378,7 @@ static int findMaxDepth(int test) {
 static void perftTest(int maxDepth) {
     uint64 totalLeafNodes = 0;
     int numPassed = 0;
-#if __GNUC__ && PERFT_MULTITHREADED
+#if COMPILER_GCC && PERFT_MULTITHREADED
     time_t startTime = time(NULL);
 #else
     uint64 totalTime = 0;
@@ -398,7 +398,7 @@ static void perftTest(int maxDepth) {
             maxDepth = maxTestDepth;
         }
         int passed = 1;
-#if __GNUC__ && PERFT_MULTITHREADED
+#if COMPILER_GCC && PERFT_MULTITHREADED
         perftMultithreaded(&board, maxDepth);
 #else
         clock_t start = clock();
@@ -416,7 +416,7 @@ static void perftTest(int maxDepth) {
         }
         totalLeafNodes += curSolutions[maxDepth];
         numPassed += passed;
-#if __GNUC__ && PERFT_MULTITHREADED
+#if COMPILER_GCC && PERFT_MULTITHREADED
     }
     uint64 totalTime = (uint64) (time(NULL) - startTime) * 1000;
 #else
