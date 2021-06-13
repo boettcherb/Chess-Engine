@@ -76,5 +76,6 @@ void initializeAll();
 int getLSB(uint64 bitboard);
 int getMSB(uint64 bitboard);
 int countBits(uint64 bitboard);
+uint64 getTime();
 
 #endif

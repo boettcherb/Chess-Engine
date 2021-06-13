@@ -2,6 +2,13 @@
 #include "magic.h"
 #include "hash.h"
 
+#ifdef OS_WINDOWS
+    #include <sysinfoapi.h>
+#endif
+#ifdef OS_LINUX
+    #include <sys/time.h>
+#endif
+
 const int pieceColor[NUM_PIECE_TYPES] = {
     WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
     BLACK, BLACK, BLACK, BLACK, BLACK, BLACK,
@@ -87,5 +94,16 @@ int countBits(uint64 bitboard) {
         bitboard &= bitboard - 1;
     }
     return bits;
+#endif
+}
+
+uint64 getTime() {
+#ifdef OS_WINDOWS
+    return (uint64) GetTickCount();
+#endif
+#ifdef OS_LINUX
+    struct timeval t;
+    gettimeofday(&t, 0);
+    return (uint64) t.tv_sec * 1000ULL + t.tv_usec / 1000ULL;
 #endif
 }
