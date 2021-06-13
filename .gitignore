@@ -1,3 +1,4 @@
+.vscode/*
 chess
 chess_debug
 perft
