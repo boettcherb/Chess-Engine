@@ -1,3 +1,4 @@
+#include "search.h"
 #include "defs.h"
 #include "board.h"
 

@@ -1,3 +1,4 @@
+#include "hash.h"
 #include "defs.h"
 #include "board.h"
 
