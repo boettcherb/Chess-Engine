@@ -6,10 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <time.h>
 #include <string.h>
-#if COMPILER_GCC && PERFT_MULTITHREADED
-    #include <pthread.h>
+
+// Determine if we will use multithreading to speed up the perft tests.
+// If the user defines PERFT_MULTITHREADED in the command line and we are on
+// linux and have access to pthread.h, then we will use multithreading.
+#ifdef PERFT_MULTITHREADED
+    #ifdef OS_LINUX
+        #include <pthread.h>
+    #else
+        #undef PERFT_MULTITHREADED
+    #endif
 #endif
 
 #define NUM_TESTS 134
@@ -290,7 +297,7 @@ static const uint64 PERFT_SOLUTIONS[NUM_TESTS][10] = {
 
 static uint64 curSolutions[10];
 
-#if COMPILER_GCC && PERFT_MULTITHREADED
+#ifdef PERFT_MULTITHREADED
 
 #define MAX_THREADS 128
 
@@ -299,7 +306,7 @@ static pthread_t threadIDs[MAX_THREADS];
 static Board boards[MAX_THREADS];
 static int maxDepthMT;
 
-static void perft(int depth, const int threadIndex) {
+static void perftMultithreaded(int depth, const int threadIndex) {
     ++threadSolutions[threadIndex][depth];
     if (depth >= maxDepthMT) {
         return;
@@ -308,7 +315,7 @@ static void perft(int depth, const int threadIndex) {
     generateAllMoves(&boards[threadIndex], &list);
     for (int moveNum = 0; moveNum < list.numMoves; ++moveNum) {
         if (makeMove(&boards[threadIndex], list.moves[moveNum])) {
-            perft(depth + 1, threadIndex);
+            perftMultithreaded(depth + 1, threadIndex);
             undoMove(&boards[threadIndex]);
         }
     }
@@ -316,11 +323,11 @@ static void perft(int depth, const int threadIndex) {
 
 static void* threadStart(void* args) {
     const int threadIndex = ((int*) args)[0];
-    perft(1, threadIndex);
+    perftMultithreaded(1, threadIndex);
     return NULL;
 }
 
-static void perftMultithreaded(const Board* board, const int maxDepth) {
+static void perft(const Board* board, int depth, int maxDepth) {
     memset(threadSolutions, 0, sizeof(threadSolutions));
     for (int i = 0; i < MAX_THREADS; ++i) {
         memcpy(&boards[i], board, sizeof(Board));
@@ -340,7 +347,7 @@ static void perftMultithreaded(const Board* board, const int maxDepth) {
     for (int i = 0; i < list.numMoves; ++i) {
         if (created[i]) {
             pthread_join(threadIDs[i], NULL);
-            for (int j = 0; j <= maxDepth; ++j) {
+            for (int j = depth; j <= maxDepth; ++j) {
                 curSolutions[j] += threadSolutions[i][j];
             }
         }
@@ -377,13 +384,8 @@ static int findMaxDepth(int test) {
 
 static void perftTest(int maxDepth) {
     uint64 totalLeafNodes = 0;
-    int numPassed = 0;
-#if COMPILER_GCC && PERFT_MULTITHREADED
-    time_t startTime = time(NULL);
-#else
     uint64 totalTime = 0;
-#endif
-
+    int numPassed = 0;
     for (int test = 0; test < NUM_TESTS; ++test) {
         puts("----------------------------------------------------------------------------------------");
         printf("%d) FEN: \"%s\"\n", test + 1, PERFT_FENS[test]);
@@ -397,16 +399,12 @@ static void perftTest(int maxDepth) {
         if (maxTestDepth < maxDepth) {
             maxDepth = maxTestDepth;
         }
-        int passed = 1;
-#if COMPILER_GCC && PERFT_MULTITHREADED
-        perftMultithreaded(&board, maxDepth);
-#else
-        clock_t start = clock();
+        uint64 startTime = getTime();
         perft(&board, 0, maxDepth);
-        uint64 time = (uint64) ((((double) clock()) - ((double) start)) / CLOCKS_PER_SEC * 1000.0);
-#endif
+        uint64 elapsedTime = getTime() - startTime;
+        int passed = 1;
         for (int depth = 1; depth <= maxDepth; ++depth) {
-            printf("depth: %d | test result: %13lld | ", depth, curSolutions[depth]);
+            printf("depth: %d | test result: %13llu | ", depth, curSolutions[depth]);
             if (curSolutions[depth] == PERFT_SOLUTIONS[test][depth]) {
                 puts("passed");
             } else {
@@ -416,14 +414,9 @@ static void perftTest(int maxDepth) {
         }
         totalLeafNodes += curSolutions[maxDepth];
         numPassed += passed;
-#if COMPILER_GCC && PERFT_MULTITHREADED
+        printf("total time: %lld ms\n", elapsedTime);
+        totalTime += elapsedTime;
     }
-    uint64 totalTime = (uint64) (time(NULL) - startTime) * 1000;
-#else
-        printf("total time: %lld ms\n", time);
-        totalTime += time;
-    }
-#endif
     if (totalTime == 0) {
         printf("This engine visited %lld leaf nodes in < 1 millisecond.\n", totalLeafNodes);
         printf("Average: > %lld Leaf Nodes / Second\n", totalLeafNodes * 1000);
