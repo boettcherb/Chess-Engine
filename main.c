@@ -4,33 +4,25 @@
 #include "search.h"
 
 #include <stdio.h>
+#include <string.h>
 
-int parseMove(Board* board, char* input) {
-	if (input[1] > '8' || input[1] < '1') return 0;
-    if (input[3] > '8' || input[3] < '1') return 0;
-    if (input[0] > 'h' || input[0] < 'a') return 0;
-    if (input[2] > 'h' || input[2] < 'a') return 0;
-    int from = (input[0] - 'a') + 8 * (input[1] - '1');
-    int to = (input[2] - 'a') + 8 * (input[3] - '1');
+int parseMove(const Board* board, char* input) {
 	MoveList list;
-    generateAllMoves(board, &list);
-    char pieceChar[NUM_PIECE_TYPES] = "pnbrqkpnbrqk";
-	for (int i = 0; i < list.numMoves; ++i) {	
-		int move = list.moves[i];
-		if ((move & 0x3F) == from && ((move >> 6) & 0x3F) == to) {
-			int promoted = (move >> 16) & 0xF;
-			if (promoted == 0xF || input[4] == pieceChar[promoted]) {
-                return move;
-            }
+	generateAllMoves(board, &list);
+	for (int i = 0; i < list.numMoves; ++i) {
+		char moveString[6];
+		getMoveString(list.moves[i], moveString);
+		if (strcmp(input, moveString) == 0) {
+			return list.moves[i];
 		}
-    }
-    return 0;
+	}
+	return 0;
 }
 
 int main() {
     initializeAll();
     Board board;
-    char* fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	char* fen = "3k1r2/6P1/8/8/8/8/8/3K4 w - - 0 1";
     if (!setBoardToFen(&board, fen)) {
         puts("Failed to set board.");
         return -1;
@@ -38,25 +30,37 @@ int main() {
     assert(checkBoard(&board));
     puts("Board set successfully!");
 
-    char input[6];
+    char input[256];
+	int depth = 0;
 	while (1) {
+		printf("\nside to move: %s\n", board.sideToMove == WHITE ? "WHITE" : "BLACK");
 		printPieces(&board);
 		printf("\nPlease enter a move > ");
-		char* res = fgets(input, 6, stdin);
-		assert(res);
+		char* ret_val = fgets(input, 255, stdin);
+		if (ret_val == NULL) {
+			printf("ERROR: Failed to read input\n");
+			return -1;
+		}
 		if (input[0] == 'q') {
 			break;
 		} else if (input[0] == 't') {
-			undoMove(&board);			
+			if (depth == 0) {
+				puts("Cannot take back a move");
+			} else {
+				undoMove(&board);
+				--depth;
+			}		
 		} else {
+			input[strlen(input) - 1] = '\0';
 			int move = parseMove(&board, input);
 			if (move != 0) {
 				makeMove(&board, move);
+				++depth;
 				if (isRepetition(&board)) {
 					printf("REPETITION SEEN\n");
                 }
 			} else {
-				printf("Move Not Parsed: %s\n",input);
+				printf("Invalid Move: %s\n",input);
 			}
         }
 		fflush(stdin);
