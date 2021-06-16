@@ -2,12 +2,11 @@
 #define HASH_H_INCLUDED
 
 #include "defs.h"
-#include "board.h"
 
 // position key / hash key
 // --------------------------------------------
 void initHashKeys();
-uint64 generatePositionKey(const Board* board);
+uint64 generatePositionKey(const void* board);
 uint64 getSideHashKey();
 uint64 getPieceHashKey(int piece, int square);
 uint64 getEnPassantHashKey(int square);

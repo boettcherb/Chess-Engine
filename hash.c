@@ -71,8 +71,9 @@ void initHashKeys() {
  * 
  * return:   The position key for the given board.
  */
-uint64 generatePositionKey(const Board* board) {
-    assert(board != NULL);
+uint64 generatePositionKey(const void* ptr) {
+    assert(ptr != NULL);
+    const Board* board = (const Board*) ptr;
     uint64 positionKey = board->sideToMove == WHITE ? sideKey : 0ULL;
     for (int square = 0; square < 64; ++square) {
         if (board->pieces[square] != NO_PIECE) {
