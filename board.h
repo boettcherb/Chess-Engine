@@ -2,6 +2,7 @@
 #define BOARD_H_INCLUDED
 
 #include "defs.h"
+#include "hash.h"
 
 /**
  * A structure to hold information about moves that were already made. The
@@ -65,6 +66,9 @@ typedef struct {
  *                    current side to move could attack by the en passant rule.
  * history:           An array of PreviousMove structs that hold info about all
  *                    the moves made to get to the board's current position.
+ * pvTable:           Principle Variation table. A hash table used to store the
+ *                    best moves found by the alpha-beta algorithm, allowing us
+ *                    to speed up our search.
  */
 typedef struct {
     uint64 pieceBitboards[NUM_PIECE_TYPES];
@@ -78,6 +82,7 @@ typedef struct {
     int fiftyMoveCount;
     uint64 enPassantSquare;
     PreviousMove history[MAX_GAME_MOVES];
+    HashTable pvTable;
 } Board;
 
 void resetBoard(Board* board);

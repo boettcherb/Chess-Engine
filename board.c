@@ -140,6 +140,7 @@ int setBoardToFen(Board* board, const char* fen) {
     board->ply = 0;
 
     board->positionKey = generatePositionKey(board);
+    initHashTable(&board->pvTable);
     assert(checkBoard(board));
     return 1;
 }

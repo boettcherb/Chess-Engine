@@ -3,6 +3,8 @@
 #include "board.h"
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 /* 
  * These values are the hash keys that will be used to generate position keys
@@ -157,4 +159,40 @@ uint64 getEnPassantHashKey(int square) {
 uint64 getCastleHashKey(int castlePerm) {
     assert((castlePerm & 0xFFFFFFF0) == 0);
     return castleKeys[castlePerm];
+}
+
+#define HASH_TABLE_SIZE 0x100000 * 2  // 2 MB
+
+/*
+ * Initialize the hash table. Set hashTable->numEntries to the correct value
+ * and allocate memory for the hash entries. 
+ *
+ * hashTable:     The hash table that is being initialized.
+ */
+void initHashTable(HashTable* hashTable) {
+    freeHashTable(hashTable);
+    hashTable->numEntries = HASH_TABLE_SIZE / sizeof(HashEntry);
+    hashTable->table = (HashEntry*) malloc(HASH_TABLE_SIZE);
+    clearHashTable(hashTable);
+    printf("Initialized hash table with %d entries\n", hashTable->numEntries);
+}
+
+/*
+ * Free the dynamically allocated block of memory pointed to by
+ * hashTable->table. Any data stored in the hash table will be lost.
+ * 
+ * hashTable:     The hash table whose memory we are freeing.
+ */
+void freeHashTable(HashTable* hashTable) {
+    free(hashTable->table);
+}
+
+/*
+ * Delete all data from the hash table. Any entries stored in the hash table
+ * will be removed and the entire block of memory will be set to 0.
+ * 
+ * hashTable:     The hash table that is being cleared.
+ */
+void clearHashTable(HashTable* hashTable) {
+    memset(hashTable->table, 0, HASH_TABLE_SIZE);
 }
