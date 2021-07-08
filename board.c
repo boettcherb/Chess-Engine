@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "attack.h"
 #include "hash.h"
+#include "movegen.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -377,4 +378,28 @@ void undoMove(Board* board) {
     board->enPassantSquare = board->history[board->ply].enPassantSquare;
     board->positionKey = board->history[board->ply].positionKey;
     assert(checkBoard(board));
+}
+
+/*
+ * Check to see if the 'move' is a legal move in the given position. Generate
+ * all possible moves in the given position and if 'move' matches any of them,
+ * check if it is legal by calling makeMove(). If the move exists and is legal,
+ * return 1. Otherwise return 0.
+ * 
+ * board:       The board that we are checking for the given move.
+ * move:        The move that we want to determine is legal in the given
+ *              position.
+ * 
+ * return:      1 if the move exists and is legal, 0 otherwise.
+ */
+int moveExists(Board* board, int move) {
+	MoveList list;
+    generateAllMoves(board, &list);
+	for (int i = 0; i < list.numMoves; ++i) {
+        if (move == list.moves[i] && makeMove(board, move)) {
+            undoMove(board);
+            return 1;
+        }
+	}
+	return 0;
 }
