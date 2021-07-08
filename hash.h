@@ -27,5 +27,7 @@ typedef struct {
 void initHashTable(HashTable* table);
 void clearHashTable(HashTable* table);
 void freeHashTable(HashTable* table);
+void storeMove(HashTable* table, int move, uint64 positionKey);
+int retrieveMove(HashTable* table, uint64 positionKey);
 
 #endif
