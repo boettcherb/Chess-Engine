@@ -74,7 +74,8 @@ int main() {
 				if (isRepetition(&board)) {
 					printf("REPETITION SEEN\n");
                 }
-			} else {
+			}
+			else {
 				printf("Invalid Move: %s\n",input);
 			}
         }
