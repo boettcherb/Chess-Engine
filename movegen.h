@@ -40,9 +40,6 @@ typedef struct {
 } MoveList;
 
 void generateAllMoves(const Board* board, MoveList* list);
-
-#ifndef NDEBUG
-    int validMove(int move);
-#endif
+int moveExists(Board* board, int move);
 
 #endif

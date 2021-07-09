@@ -89,7 +89,6 @@ void resetBoard(Board* board);
 int setBoardToFen(Board* board, const char* fen);
 int makeMove(Board* board, int move);
 void undoMove(Board* board);
-int moveExists(Board* board, int move);
 
 // functions only used in debug mode. NDEBUG is also used in assert.h. If
 // NDEBUG is defined, asserts will not run.
