@@ -2,6 +2,7 @@
 #include "board.h"
 #include "movegen.h"
 #include "search.h"
+#include "hash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,7 +32,7 @@ int main() {
     puts("Board set successfully!");
 
     char input[256];
-	int depth = 0;
+	int depth = 0, pvDepth = 0;
 	while (1) {
 		printf("\nside to move: %s\n", board.sideToMove == WHITE ? "WHITE" : "BLACK");
 		printPieces(&board);
@@ -43,19 +44,33 @@ int main() {
 		}
 		if (input[0] == 'q') {
 			break;
-		} else if (input[0] == 't') {
+		}
+		else if (input[0] == 't') {
 			if (depth == 0) {
 				puts("Cannot take back a move");
 			} else {
 				undoMove(&board);
 				--depth;
 			}		
-		} else {
+		}
+		else if (input[0] == 'p') {
+			int numMoves = fillpvArray(&board, pvDepth);
+			printf("pv line of %d moves:", numMoves);
+			for (int i = 0; i < numMoves; ++i) {
+				char moveString[6];
+				getMoveString(board.pvArray[i], moveString);
+				printf(" %s", moveString);
+			}
+			putchar('\n');
+		}
+		else {
 			input[strlen(input) - 1] = '\0';
 			int move = parseMove(&board, input);
 			if (move != 0) {
+				storeMove(&board.pvTable, move, board.positionKey);
 				makeMove(&board, move);
 				++depth;
+				pvDepth = depth > pvDepth ? depth : pvDepth;
 				if (isRepetition(&board)) {
 					printf("REPETITION SEEN\n");
                 }

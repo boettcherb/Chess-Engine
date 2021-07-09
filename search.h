@@ -5,5 +5,6 @@
 #include "board.h"
 
 int isRepetition(const Board* board);
+int fillpvArray(Board* board, int depth);
 
 #endif
