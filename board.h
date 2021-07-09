@@ -52,7 +52,7 @@ typedef struct {
  *                    This value is used to check for 3-fold repetitions.
  * material:          Two integers holding the overall material for each side.
  *                    (Q=9, R=5, B=3, N=3, P=1). First set in setBoardToFen()
- *                    and updated incrementally in makeMove() and undoMove().
+ *                    and updated incrementally as moves are made and unmade.
  * sideToMove:        An integer that is either 0 (white) or 1 (black) denoting
  *                    whose turn it is in the current position.
  * ply:               An integer holding the number of half moves made to get
@@ -69,6 +69,8 @@ typedef struct {
  * pvTable:           Principle Variation table. A hash table used to store the
  *                    best moves found by the alpha-beta algorithm, allowing us
  *                    to speed up our search.
+ * pvArray:           An array of moves (ints) storing the principal variation
+ *                    (best / main line) of the current position.
  */
 typedef struct {
     uint64 pieceBitboards[NUM_PIECE_TYPES];
@@ -83,6 +85,7 @@ typedef struct {
     uint64 enPassantSquare;
     PreviousMove history[MAX_GAME_MOVES];
     HashTable pvTable;
+    int pvArray[MAX_SEARCH_DEPTH];
 } Board;
 
 void resetBoard(Board* board);

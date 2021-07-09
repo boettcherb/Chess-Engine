@@ -32,6 +32,7 @@
 typedef unsigned long long uint64;
 #define MAX_GAME_MOVES 512
 #define NUM_PIECE_TYPES 12
+#define MAX_SEARCH_DEPTH 64
 #define NO_PIECE -1
 
 #define MOVE_FLAGS                 0x1F00000
