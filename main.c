@@ -1,11 +1,7 @@
 #include "defs.h"
-#include "board.h"
-#include "movegen.h"
-#include "search.h"
-#include "hash.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>   // printf, puts, putchar, fflush
+#include <string.h>  // strcmp, strlen
 
 int parseMove(const Board* board, char* input) {
 	MoveList list;

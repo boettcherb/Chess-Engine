@@ -1,11 +1,9 @@
 #include "defs.h"
-#include "magic.h"
-#include "hash.h"
 
 #if defined(OS_WINDOWS)
-    #include <windows.h>
+    #include <windows.h>   // GetTickCount
 #elif defined(OS_LINUX)
-    #include <sys/time.h>
+    #include <sys/time.h>  // struct timeval, gettimeofday
 #endif
 
 const int pieceColor[NUM_PIECE_TYPES] = {

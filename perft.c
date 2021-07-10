@@ -1,18 +1,14 @@
 #include "defs.h"
-#include "board.h"
-#include "movegen.h"
-#include "magic.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>   // printf, puts, scanf, scanf_s, fflush
+#include <string.h>  // memset, memcpy
 
 // Determine if we will use multithreading to speed up the perft tests.
 // If the user defines PERFT_MULTITHREADED in the command line and we are on
 // linux and have access to pthread.h, then we will use multithreading.
 #ifdef PERFT_MULTITHREADED
     #ifdef OS_LINUX
-        #include <pthread.h>
+        #include <pthread.h>  // pthread_create, pthread_join
     #else
         #undef PERFT_MULTITHREADED
     #endif

@@ -1,10 +1,7 @@
-#include "hash.h"
 #include "defs.h"
-#include "board.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdlib.h>  // srand, rand, malloc, free
+#include <string.h>  // memset
 
 /* 
  * These values are the hash keys that will be used to generate position keys
@@ -71,9 +68,8 @@ void initHashKeys() {
  * 
  * return:   The position key for the given board.
  */
-uint64 generatePositionKey(const void* ptr) {
-    assert(ptr != NULL);
-    const Board* board = (const Board*) ptr;
+uint64 generatePositionKey(const Board* board) {
+    assert(board != NULL);
     uint64 positionKey = board->sideToMove == WHITE ? sideKey : 0ULL;
     for (int square = 0; square < 64; ++square) {
         if (board->pieces[square] != NO_PIECE) {

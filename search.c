@@ -1,7 +1,4 @@
-#include "search.h"
 #include "defs.h"
-#include "board.h"
-#include "movegen.h"
 
 /*
  * Determine if the current state of the board is a repetition of a previous

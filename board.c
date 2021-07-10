@@ -1,10 +1,7 @@
-#include "board.h"
 #include "defs.h"
-#include "attack.h"
-#include "hash.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>   // printf, puts, sscanf, sscanf_s
+#include <string.h>  // memset, strlen
 
 /*
  * Clear the board and set all board variables to their default value. The

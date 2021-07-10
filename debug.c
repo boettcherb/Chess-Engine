@@ -1,10 +1,7 @@
 #include "defs.h"
-#include "board.h"
-#include "movegen.h"
-#include "hash.h"
 
-#include <string.h>
-#include <stdio.h>
+#include <string.h>  // memcpy
+#include <stdio.h>   // printf, puts, putchar
 
 /*
  * Some variables in these functions are only used in assert statements, so

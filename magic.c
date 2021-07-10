@@ -1,4 +1,3 @@
-#include "magic.h"
 #include "defs.h"
 
 /*

@@ -1,7 +1,4 @@
-#include "attack.h"
 #include "defs.h"
-#include "magic.h"
-#include "board.h"
 
 /*
  * Attack bitboards for knights and kings. If there is a king on D4, then you

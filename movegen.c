@@ -1,9 +1,6 @@
-#include "movegen.h"
 #include "defs.h"
-#include "board.h"
-#include "attack.h"
 
-#include "stdlib.h"
+#include <stdlib.h> // qsort
 
 /*
  * These arrays are used to find the move score of a particular move. The move
