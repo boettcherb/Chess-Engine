@@ -45,10 +45,15 @@ int setBoardToFen(Board* board, const char* fen) {
     assert(board != NULL);
     assert(fen != NULL);
     resetBoard(board);
-    char layout[100], side, castlePerms[100], enPassantSquare[100];
+    char layout[128], side, castlePerms[8], enPassantSquare[4];
     int fiftyMoveCount, moveNumber;
+#if defined(COMPILER_MSVS)
+    if (sscanf_s(fen, "%s %c %s %s %d %d", layout, 128, &side, 1, castlePerms,
+        8, enPassantSquare, 4, &fiftyMoveCount, &moveNumber) != 6) {
+#else
     if (sscanf(fen, "%s %c %s %s %d %d", layout, &side, castlePerms,
         enPassantSquare, &fiftyMoveCount, &moveNumber) != 6) {
+#endif
         puts("Error: setBoardToFen: Could not parse or invalid FEN string.");
         return 0;
     }

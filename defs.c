@@ -2,10 +2,9 @@
 #include "magic.h"
 #include "hash.h"
 
-#ifdef OS_WINDOWS
-    #include <sysinfoapi.h>
-#endif
-#ifdef OS_LINUX
+#if defined(OS_WINDOWS)
+    #include <windows.h>
+#elif defined(OS_LINUX)
     #include <sys/time.h>
 #endif
 
@@ -42,8 +41,12 @@ void initializeAll() {
  */
 int getLSB(uint64 bitboard) {
     assert(bitboard != 0);
-#ifdef COMPILER_GCC
+#if defined(COMPILER_GCC)
     return __builtin_ctzll(bitboard);
+#elif defined(COMPILER_MSVS)
+    DWORD index;
+    _BitScanForward64(&index, bitboard);
+    return (int) index;
 #else
     int index = 0;
     while (!(bitboard & 0x1)) {
@@ -65,8 +68,12 @@ int getLSB(uint64 bitboard) {
  */
 int getMSB(uint64 bitboard) {
     assert(bitboard != 0);
-#ifdef COMPILER_GCC
+#if defined(COMPILER_GCC)
     return 63 - __builtin_clzll(bitboard);
+#elif defined(COMPILER_MSVS)
+    DWORD index;
+    _BitScanReverse64(&index, bitboard);
+    return (int) index;
 #else
     int index = 63;
     while (!(bitboard & 0x8000000000000000)) {
@@ -86,8 +93,10 @@ int getMSB(uint64 bitboard) {
  * return:     The number of bits in the bitboard that are set to 1.
  */
 int countBits(uint64 bitboard) {
-#ifdef COMPILER_GCC
+#if defined(COMPILER_GCC)
     return __builtin_popcountll(bitboard);
+#elif defined(COMPILER_MSVS)
+    return (int) __popcnt64(bitboard);
 #else
     int bits;
     for (bits = 0; bitboard; ++bits) {
@@ -98,10 +107,9 @@ int countBits(uint64 bitboard) {
 }
 
 uint64 getTime() {
-#ifdef OS_WINDOWS
+#if defined(OS_WINDOWS)
     return (uint64) GetTickCount();
-#endif
-#ifdef OS_LINUX
+#elif defined(OS_LINUX)
     struct timeval t;
     gettimeofday(&t, 0);
     return (uint64) (t.tv_sec * 1000ULL + t.tv_usec / 1000ULL);

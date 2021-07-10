@@ -2,25 +2,30 @@
 #define DEFS_H_INCLUDED
 
 // Determine the operating system. This allows us to include os-specific
-// libraries. Ex: <sys/time.h> for linux vs <sysinfoapi.h> for windows
+// libraries. Ex: <sys/time.h> for linux vs <windows.h> for windows
 // TODO: handle MAC as well?
 #undef OS_WINDOWS
 #undef OS_LINUX
-#if defined(_WIN32) && !defined(__linux__)
+#if defined(_WIN32)
+    #if !defined(_WIN64)
+        #error "Must compile with 64-bit Windows (x64)"
+    #endif
     #define OS_WINDOWS
-#endif
-#if defined(__linux__) && !defined(_WIN32)
+#elif defined(__linux__)
     #define OS_LINUX
 #endif
 #if !defined(OS_WINDOWS) && !defined(OS_LINUX)
-    #error "No operating system or multiple operating systems detected!"
+    #error "Unrecognized Operating System!"
 #endif
 
 // Determine the compiler. This allows us to call compiler-specific functions
-// Ex: __builtin_popcountll() is gcc-specific
-// TODO: handle other c compilers besides gcc (msvs, clang, etc.)
+// Ex: __builtin_popcountll() for gcc vs __popcnt64() for visual studio
+// TODO: add support for more C compilers (clang, minGW, etc.)
+#undef COMPILER_MSVS
 #undef COMPILER_GCC
-#ifdef __GNUC__
+#if defined(_MSC_VER)
+    #define COMPILER_MSVS
+#elif defined(__GNUC__)
     #define COMPILER_GCC
 #endif
 
