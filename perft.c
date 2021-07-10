@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
 
 // Determine if we will use multithreading to speed up the perft tests.
@@ -429,14 +428,30 @@ static void perftTest(int maxDepth) {
     fflush(stdout);
 }
 
-int main(int argc, char** argv) {
-    if (argc != 2 || argv[1][1] || argv[1][0] == '0' || !isdigit(argv[1][0])) {
-        printf("Usage: %s <max depth 1-9>\n", &argv[0][2]);
+int main() {
+#if defined(OS_WINDOWS)
+    puts("OS: Windows");
+#else
+    puts("OS: Linux");
+#endif
+
+#if defined(COMPILER_MSVS)
+    puts("COMPILER: MSVS");
+#elif defined(COMPILER_GCC)
+    puts("COMPILER: GCC");
+#endif
+
+    initializeAll();
+    printf("Enter the max search depth for the perft tests (1-6 recommended): ");
+    int maxDepth;
+#if defined(COMPILER_MSVS)
+    if (scanf_s("%d", &maxDepth) != 1 || maxDepth < 1) {
+#else
+    if (scanf("%d", &maxDepth) != 1 || maxDepth < 1) {
+#endif
+        puts("Invalid Input. Enter a number > 0.");
         return -1;
     }
-    int maxDepth = argv[1][0] - '0';
-    printf("max depth: %d\n", maxDepth);
-    initializeAll();
     perftTest(maxDepth);
     return 0;
 }
