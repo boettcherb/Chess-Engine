@@ -54,7 +54,7 @@ int setBoardToFen(Board* board, const char* fen) {
     }
 
     // layout
-    int layoutLength = strlen(layout), square = 56, numEmpty;
+    int layoutLength = (int) strlen(layout), square = 56, numEmpty;
     assert(layoutLength < 70);
     for (int layoutPos = 0; layoutPos < layoutLength; ++layoutPos) {
         switch(layout[layoutPos]) {
@@ -99,7 +99,7 @@ int setBoardToFen(Board* board, const char* fen) {
     board->sideToMove = side == 'w' ? WHITE : BLACK;
 
     // castle permissions
-    int castlePermsLength = strlen(castlePerms); 
+    int castlePermsLength = (int) strlen(castlePerms); 
     assert(castlePermsLength < 5);
     for (int pos = 0; pos < castlePermsLength; ++pos) {
         switch (castlePerms[pos]) {
@@ -186,7 +186,7 @@ static void addPiece(Board* board, int square, int piece) {
     board->pieceBitboards[piece] |= setMask;
     board->colorBitboards[pieceColor[piece]] |= setMask;
     board->colorBitboards[BOTH_COLORS] |= setMask;
-    board->pieces[square] = piece;
+    board->pieces[square] = (char) piece;
     board->positionKey ^= getPieceHashKey(piece, square);
     board->material[pieceColor[piece]] += material[piece];
 }
@@ -217,7 +217,7 @@ static void movePiece(Board* board, int from, int to) {
     board->colorBitboards[pieceColor[piece]] |= setMask;
     board->colorBitboards[BOTH_COLORS] &= clearMask;
     board->colorBitboards[BOTH_COLORS] |= setMask;
-    board->pieces[to] = piece;
+    board->pieces[to] = (char) piece;
     board->pieces[from] = NO_PIECE;
     board->positionKey ^= getPieceHashKey(piece, from);
     board->positionKey ^= getPieceHashKey(piece, to);

@@ -251,7 +251,7 @@ const uint64 rookAttacks[64] = {
  * return:      A bitboard with a 1-bit in every position that the sliding
  *              piece on the square 'square' can attack.
  */
-uint64 bishopAttacksSlow(int square, uint64 allPieces) {
+static uint64 bishopAttacksSlow(int square, uint64 allPieces) {
     assert(square >= 0 && square < 64);
     uint64 bishopMoves = bishopAttacks[square];
     uint64 blockersNorthEast = rayNorthEast[square] & allPieces;
@@ -272,7 +272,7 @@ uint64 bishopAttacksSlow(int square, uint64 allPieces) {
     }
     return bishopMoves;
 }
-uint64 rookAttacksSlow(int square, uint64 allPieces) {
+static uint64 rookAttacksSlow(int square, uint64 allPieces) {
     assert(square >= 0 && square < 64);
     uint64 rookMoves = rookAttacks[square];
     uint64 blockersNorth = rayNorth[square] & allPieces;
@@ -511,14 +511,14 @@ int getBishopAttackIndex(int square, uint64 blockers) {
     assert(square >= 0 && square < 64);
     assert(!(~(bishopAttacks[square] & 0x007E7E7E7E7E7E00) & blockers));
     int shift = 64 - numBishopBlockers[square];
-    int index = (blockers * bishopMagics[square]) >> shift;
+    int index = (int) ((blockers * bishopMagics[square]) >> shift);
     assert(index >= 0 && index < (1 << numBishopBlockers[square]));
     return index;
 }
 int getRookAttackIndex(int square, uint64 blockers) {
     assert(square >= 0 && square < 64);
     int shift = 64 - numRookBlockers[square];
-    int index = (blockers * rookMagics[square]) >> shift;
+    int index = (int) ((blockers * rookMagics[square]) >> shift);
     assert(index >= 0 && index < (1 << numRookBlockers[square]));
     return index;
 }

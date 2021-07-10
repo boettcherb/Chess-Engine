@@ -104,6 +104,6 @@ uint64 getTime() {
 #ifdef OS_LINUX
     struct timeval t;
     gettimeofday(&t, 0);
-    return (uint64) t.tv_sec * 1000ULL + t.tv_usec / 1000ULL;
+    return (uint64) (t.tv_sec * 1000ULL + t.tv_usec / 1000ULL);
 #endif
 }
