@@ -175,7 +175,6 @@ void initHashTable(HashTable* hashTable) {
     hashTable->numEntries = HASH_TABLE_SIZE / sizeof(HashEntry);
     hashTable->table = (HashEntry*) malloc(HASH_TABLE_SIZE);
     clearHashTable(hashTable);
-    printf("Initialized hash table with %d entries\n", hashTable->numEntries);
 }
 
 /*
@@ -186,6 +185,7 @@ void initHashTable(HashTable* hashTable) {
  */
 void freeHashTable(HashTable* hashTable) {
     free(hashTable->table);
+    hashTable->table = NULL;
 }
 
 /*

@@ -81,5 +81,6 @@ int main() {
         }
 		fflush(stdin);
 	}
+	freeHashTable(&board.pvTable);
     return 0;
 }

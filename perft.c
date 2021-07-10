@@ -416,6 +416,7 @@ static void perftTest(int maxDepth) {
         numPassed += passed;
         printf("total time: %lld ms\n", elapsedTime);
         totalTime += elapsedTime;
+        freeHashTable(&board.pvTable);
     }
     if (totalTime == 0) {
         printf("This engine visited %lld leaf nodes in < 1 millisecond.\n", totalLeafNodes);

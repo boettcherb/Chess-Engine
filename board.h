@@ -88,7 +88,6 @@ typedef struct {
     int pvArray[MAX_SEARCH_DEPTH];
 } Board;
 
-void resetBoard(Board* board);
 int setBoardToFen(Board* board, const char* fen);
 int makeMove(Board* board, int move);
 void undoMove(Board* board);
