@@ -1,7 +1,6 @@
 #include "defs.h"
 
-#include <stdlib.h>  // srand, rand, malloc, free
-#include <string.h>  // memset
+#include <stdlib.h>  // srand, rand
 
 /* 
  * These values are the hash keys that will be used to generate position keys

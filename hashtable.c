@@ -1,5 +1,8 @@
 #include "defs.h"
 
+#include <stdlib.h> // malloc, free
+#include <string.h> // memset
+
 #define HASH_TABLE_SIZE 0x100000 * 2  // 2 MB
 
 /*
