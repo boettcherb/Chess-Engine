@@ -3,3 +3,7 @@ chess
 chess_debug
 perft
 perft_debug
+chess.exe
+chess_debug.exe
+perft.exe
+perft_debug.exe
