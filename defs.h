@@ -238,13 +238,15 @@ int setBoardToFen(Board* board, const char* fen);
 int makeMove(Board* board, int move);
 void undoMove(Board* board);
 
-// hash.h
+// hashkey.h
 void initHashKeys();
 uint64 generatePositionKey(const Board* board);
 uint64 getSideHashKey();
 uint64 getPieceHashKey(int piece, int square);
 uint64 getEnPassantHashKey(int square);
 uint64 getCastleHashKey(int castlePerm);
+
+// hashtable.h
 void initHashTable(HashTable* table);
 void clearHashTable(HashTable* table);
 void freeHashTable(HashTable* table);
