@@ -67,7 +67,7 @@ static int compareMoves(const void* m1, const void* m2) {
 }
 
 /* 
- * Assemble all the parts of a move into a single 32-bit integer. See movegen.h
+ * Assemble all the parts of a move into a single 32-bit integer. See defs.h
  * for the layout of a single move.
  *
  * from:        The square the moving piece started on. Must be in the
