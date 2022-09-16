@@ -3,16 +3,6 @@
 #include <string.h>  // memcpy
 #include <stdio.h>   // printf, puts, putchar
 
-/*
- * Some variables in these functions are only used in assert statements, so
- * running in release mode will cause an unused variable warning. One easy
- * way to disable these warnings (without using pragma or compiler-specific
- * options) is to write "(void) x;". This line of code does nothing but it
- * fools the compiler into thinking the variable is being used. This define
- * replaces the (void) to make it very clear what is happening.
- */
-#define IGNORE_UNUSED_VARIABLE (void)
-
 /* 
  * Calculate a board's color bitboards from its piece bitboards. If color is
  * WHITE, combine all the white piece bitboards. If color is BLACK, combine all
@@ -121,7 +111,6 @@ int checkBoard(const Board* board) {
     // check to make sure the en passant square is valid
     if (board->enPassantSquare != 0ULL) {
         int sq = getLSB(board->enPassantSquare);
-        IGNORE_UNUSED_VARIABLE sq;
         assert(board->pieces[sq] == NO_PIECE);
         if (board->sideToMove == WHITE) {
             // en passant square was made by a black pawn
@@ -156,10 +145,6 @@ int validMove(int move) {
     int to = (move >> 6) & 0x3F;
     int captured = (move >> 12) & 0xF;
     int promoted = (move >> 16) & 0xF;
-    IGNORE_UNUSED_VARIABLE from;
-    IGNORE_UNUSED_VARIABLE to;
-    IGNORE_UNUSED_VARIABLE captured;
-    IGNORE_UNUSED_VARIABLE promoted;
     assert(move >> 25);
     if (move & CAPTURE_FLAG) {
         assert(!(move & (EN_PASSANT_FLAG | CASTLE_FLAG | PAWN_START_FLAG)));
