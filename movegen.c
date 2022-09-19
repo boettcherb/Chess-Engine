@@ -411,9 +411,12 @@ int moveExists(Board* board, int move) {
 	MoveList list;
     generateAllMoves(board, &list);
 	for (int i = 0; i < list.numMoves; ++i) {
-        if (move == list.moves[i] && makeMove(board, move)) {
-            undoMove(board);
-            return 1;
+        if (move == list.moves[i]) {
+            if (makeMove(board, move)) {
+                undoMove(board);
+                return 1;
+            }
+            return 0;
         }
 	}
 	return 0;
