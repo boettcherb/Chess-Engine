@@ -140,6 +140,7 @@ int setBoardToFen(Board* board, const char* fen) {
         return 0;
     }
     board->ply = 0;
+    board->searchPly = 0;
 
     board->positionKey = generatePositionKey(board);
     initHashTable(&board->pvTable);
@@ -276,6 +277,7 @@ int makeMove(Board* board, int move) {
     board->history[board->ply].enPassantSquare = board->enPassantSquare;
     board->history[board->ply].fiftyMoveCount = board->fiftyMoveCount;
     board->history[board->ply++].positionKey = board->positionKey;
+    ++board->searchPly;
     if (board->enPassantSquare != 0ULL) {
         int square = getLSB(board->enPassantSquare);
         board->positionKey ^= getEnPassantHashKey(square);
@@ -345,6 +347,7 @@ void undoMove(Board* board) {
     assert(checkBoard(board));
     assert(board->ply > 0);
     board->sideToMove = !board->sideToMove;
+    --board->searchPly;
     int move = board->history[--board->ply].move;
     int from = move & 0x3F;
     int to = (move >> 6) & 0x3F;

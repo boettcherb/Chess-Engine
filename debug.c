@@ -56,7 +56,8 @@ int checkBoard(const Board* board) {
     assert(board->colorBitboards[BLACK] == getColorBitboard(board, BLACK));
     assert(board->colorBitboards[BOTH_COLORS] ==
         getColorBitboard(board, BOTH_COLORS));
-    assert(board->ply >= 0);
+    assert(board->ply >= 0 && board->ply <= MAX_GAME_MOVES * 2);
+    assert(board->searchPly >= 0 && board->searchPly <= MAX_GAME_MOVES * 2);
     // Loop through each piece in the board and count the number of each piece
     // type. Make sure the numbers of each piece type are valid. Also verify
     // that board->material[] is correct.
