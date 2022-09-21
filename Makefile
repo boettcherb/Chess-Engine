@@ -1,4 +1,4 @@
-c_files = defs.c board.c movegen.c attack.c magic.c hashkey.c hashtable.c search.c
+c_files = defs.c board.c movegen.c attack.c magic.c hashkey.c hashtable.c search.c evaluate.c
 all_warnings = -Wall -Wextra -Wpedantic -Werror
 gcc = x86_64-w64-mingw32-gcc
 

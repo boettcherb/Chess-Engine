@@ -279,6 +279,9 @@ int getRookAttackIndex(int square, uint64 blockers);
 int isRepetition(const Board* board);
 int fillpvArray(Board* board, int depth);
 
+// evaluate.h
+int evaluatePosition(const Board* board);
+
 // functions only used in debug mode
 #ifndef NDEBUG
     int checkBoard(const Board* board);
