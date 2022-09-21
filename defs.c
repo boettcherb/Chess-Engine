@@ -104,6 +104,15 @@ int countBits(uint64 bitboard) {
 #endif
 }
 
+/*
+ * Return a time value in milliseconds. A time value on its own is meaningless.
+ * This function is meant to be called twice so that an elapsed time in
+ * milliseconds can be computed (endTime - startTime). Retrieving a time value
+ * in milliseconds is OS specific: Windows uses GetTickCount() and linux uses
+ * gettimeofday() and a timeval struct.
+ *
+ * return: a time value in milliseconds
+ */
 uint64 getTime() {
 #if defined(OS_WINDOWS)
     return (uint64) GetTickCount();
