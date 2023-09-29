@@ -19,7 +19,8 @@ int parseMove(const Board* board, char* input) {
 int main() {
     initializeAll();
     Board board;
-	char* fen = "3k1r2/6P1/8/8/8/8/8/3K4 w - - 0 1";
+	SearchInfo info;
+	char* fen = "8/8/1k1K4/8/8/8/8/5Q2 w - - 0 1";
     if (!setBoardToFen(&board, fen)) {
         puts("Failed to set board.");
         return -1;
@@ -49,15 +50,9 @@ int main() {
 				--depth;
 			}		
 		}
-		else if (input[0] == 'p') {
-			int numMoves = fillpvArray(&board, pvDepth);
-			printf("pv line of %d moves:", numMoves);
-			for (int i = 0; i < numMoves; ++i) {
-				char moveString[6];
-				getMoveString(board.pvArray[i], moveString);
-				printf(" %s", moveString);
-			}
-			putchar('\n');
+		else if (input[0] == 's') {
+			info.depth = 6;
+			searchPosition(&board, &info);
 		}
 		else {
 			input[strlen(input) - 1] = '\0';

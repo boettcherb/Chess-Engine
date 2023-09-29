@@ -1,5 +1,10 @@
 #include "defs.h"
 
+#include <string.h> // memset
+
+#define INFINITY 2000000000
+#define MATE 30000
+
 /*
  * Determine if the current state of the board is a repetition of a previous
  * state. Check this by comparing position keys at different stages of the
@@ -58,4 +63,118 @@ int fillpvArray(Board* board, int depth) {
         undoMove(board);
     }
     return movesFound;
+}
+
+// check if search time is up, or if there was an interrupt from the GUI
+// static void checkUp() {
+//     return;
+// }
+
+// clear board's pv array, history heuristics, etc. to get ready for a new search
+static void clearForSearch(Board* board, SearchInfo* info) {
+    assert(checkBoard(board));
+    memset(board->searchHistory, 0, sizeof(int) * NUM_PIECE_TYPES * 64);
+    memset(board->searchKillers, 0, sizeof(int) * 2 * MAX_SEARCH_DEPTH);
+    clearHashTable(&board->pvTable);
+    board->searchPly = 0;
+    info->startTime = getTime();
+    info->nodes = info->stopped = info->failHigh = info->failHighFirst = 0;
+}
+
+// eliminates the horizon effect by going through all capture moves in a position
+// static int quiescenseSearch(Board* board, SearchInfo* info, int alpha, int beta) {
+//     assert(checkBoard(board));
+//     (void) alpha;
+//     checkUp();
+//     (void) beta;
+//     return 0;
+// }
+
+static int alphaBeta(Board* board, SearchInfo* info, int alpha, int beta, int depth, int doNull) {
+    (void) doNull;
+    assert(checkBoard(board));
+	
+	++info->nodes;
+
+	if (depth == 0) {
+		return evaluatePosition(board);
+	}
+	
+	if (isRepetition(board) || board->fiftyMoveCount >= 100) {
+		return 0;
+	}
+	
+	if(board->searchPly >= MAX_SEARCH_DEPTH) {
+		return evaluatePosition(board);
+	}
+	
+	MoveList list;
+    generateAllMoves(board, &list);
+
+	int legal = 0;
+	int oldAlpha = alpha;
+	int bestMove = -1;
+	
+	for (int moveNum = 0; moveNum < list.numMoves; ++moveNum) {	
+       
+        if (!makeMove(board, list.moves[moveNum]))  {
+            continue;
+        }
+        
+		++legal;
+		int score = -alphaBeta(board, info, -beta, -alpha, depth - 1, 1);		
+        undoMove(board);
+		
+		if (score > alpha) {
+			if (score >= beta) {
+                if (legal == 1) {
+                    ++info->failHighFirst;
+                }
+                ++info->failHigh;
+				return beta;
+			}
+			alpha = score;
+			bestMove = list.moves[moveNum];
+		}		
+    }
+	
+	if (legal == 0) {
+        int king = board->sideToMove == WHITE ? WHITE_KING : BLACK_KING;
+        if (squareAttacked(board, board->pieceBitboards[king], board->sideToMove ^ 1)) {
+			return -MATE + board->searchPly;
+		} else {
+			return 0;
+		}
+	}
+	
+	if (alpha != oldAlpha) {
+        storeMove(&board->pvTable, bestMove, board->positionKey);
+	}
+	
+	return alpha;
+}
+
+// handles iterative deepening
+void searchPosition(Board* board, SearchInfo* info) {
+    assert(checkBoard(board));
+    clearForSearch(board, info);
+    for (int depth = 1; depth <= info->depth; ++depth) {
+        int score = alphaBeta(board, info, -INFINITY, INFINITY, depth, 1);
+
+        // check if we are out of time
+
+        // print stuff
+        printf("depth: %d, score: %d, nodes: %lld\n", depth, score, info->nodes);
+        int numMoves = fillpvArray(board, depth);
+		printf("pv line of %d moves:", numMoves);
+		for (int i = 0; i < numMoves; ++i) {
+			char moveString[6];
+			getMoveString(board->pvArray[i], moveString);
+			printf(" %s", moveString);
+		}
+		putchar('\n');
+        printf("fail high: %.2f\n", info->failHigh);
+        printf("fail high first: %.2f\n", info->failHighFirst);
+        printf("Ordering: %.2f\n", info->failHighFirst / info->failHigh);
+    }
 }

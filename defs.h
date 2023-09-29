@@ -199,6 +199,13 @@ typedef struct {
     PreviousMove history[MAX_GAME_MOVES];
     HashTable pvTable;
     int pvArray[MAX_SEARCH_DEPTH];
+
+    // any time a move beats alpha, for that piece type and the to square, we will increment the array by 1. 
+    int searchHistory[NUM_PIECE_TYPES][64];
+
+    // used for move ordering. Stores non-capture moves that resulted in a beta cutoff
+    int searchKillers[2][MAX_SEARCH_DEPTH];
+
 } Board;
 
 /******************************************************************************
@@ -235,6 +242,21 @@ typedef struct {
     int numMoves;
     int moves[MAX_GAME_MOVES];
 } MoveList;
+
+typedef struct {
+    int startTime;
+    int stopTime;
+    int depth;
+    int depthSet;
+    int timeSet;
+    int movesToGo;
+    int infinite;
+    long long nodes;
+    int quit;
+    int stopped;
+    float failHigh;
+    float failHighFirst;
+} SearchInfo;
 
 // board.h
 int setBoardToFen(Board* board, const char* fen);
@@ -281,6 +303,7 @@ int getRookAttackIndex(int square, uint64 blockers);
 // search.h
 int isRepetition(const Board* board);
 int fillpvArray(Board* board, int depth);
+void searchPosition(Board* board, SearchInfo* info);
 
 // evaluate.h
 int evaluatePosition(const Board* board);
