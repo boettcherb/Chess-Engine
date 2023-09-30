@@ -3,15 +3,11 @@
 #include <stdio.h>   // printf, puts, scanf, scanf_s, fflush
 #include <string.h>  // memset, memcpy
 
-// Determine if we will use multithreading to speed up the perft tests.
-// If the user defines PERFT_MULTITHREADED in the command line and we are on
-// linux and have access to pthread.h, then we will use multithreading.
+// If the user defines PERFT_MULTITHREADED in the command line, use the
+// library tinycthread for multithreading.
+#define PERFT_MULTITHREADED
 #ifdef PERFT_MULTITHREADED
-    #ifdef OS_LINUX
-        #include <pthread.h>  // pthread_create, pthread_join
-    #else
-        #undef PERFT_MULTITHREADED
-    #endif
+    #include "libs\tinycthread.h"
 #endif
 
 #define NUM_TESTS 134
@@ -290,14 +286,15 @@ static const uint64 PERFT_SOLUTIONS[NUM_TESTS][10] = {
     { 1, 24,  496,  9483,  182838,   3605103,   71179139,   1482218224,  30927558887,            0 },
 };
 
-static uint64 curSolutions[10];
+static uint64 curTestResult[10];
 
 #ifdef PERFT_MULTITHREADED
 
 #define MAX_THREADS 128
 
 static uint64 threadSolutions[MAX_THREADS][10];
-static pthread_t threadIDs[MAX_THREADS];
+static thrd_t threads[MAX_THREADS];
+static int threadArg[MAX_THREADS];
 static Board boards[MAX_THREADS];
 static int maxDepthMT;
 
@@ -316,10 +313,10 @@ static void perftMultithreaded(int depth, const int threadIndex) {
     }
 }
 
-static void* threadStart(void* args) {
+static int threadStart(void* args) {
     const int threadIndex = ((int*) args)[0];
     perftMultithreaded(1, threadIndex);
-    return NULL;
+    return 0;
 }
 
 static void perft(const Board* board, int depth, int maxDepth) {
@@ -327,7 +324,6 @@ static void perft(const Board* board, int depth, int maxDepth) {
     for (int i = 0; i < MAX_THREADS; ++i) {
         memcpy(&boards[i], board, sizeof(Board));
     }
-    int arg[MAX_THREADS];
     int created[MAX_THREADS] = { 0 };
     maxDepthMT = maxDepth;
     MoveList list; 
@@ -335,15 +331,23 @@ static void perft(const Board* board, int depth, int maxDepth) {
     for (int i = 0; i < list.numMoves; ++i) {
         if (makeMove(&boards[i], list.moves[i])) {
             created[i] = 1;
-            arg[i] = i;
-            pthread_create(&threadIDs[i], NULL, threadStart, (void*) &arg[i]);
+            threadArg[i] = i;
+            int code = thrd_create(&threads[i], threadStart, (void*) &threadArg[i]);
+            if (code != thrd_success) {
+                printf("ERROR creating thread: %d\n", i);
+                return;
+            }
         }
     }
     for (int i = 0; i < list.numMoves; ++i) {
         if (created[i]) {
-            pthread_join(threadIDs[i], NULL);
+            int code = thrd_join(threads[i], NULL);
+            if (code != thrd_success) {
+                printf("ERROR joining thread: %d\n", i);
+                return;
+            }
             for (int j = depth; j <= maxDepth; ++j) {
-                curSolutions[j] += threadSolutions[i][j];
+                curTestResult[j] += threadSolutions[i][j];
             }
         }
     }
@@ -353,7 +357,7 @@ static void perft(const Board* board, int depth, int maxDepth) {
 
 static void perft(Board* board, int depth, int maxDepth) {
     assert(checkBoard(board));
-    ++curSolutions[depth];
+    ++curTestResult[depth];
     if (depth >= maxDepth) {
         return;
     }
@@ -369,12 +373,12 @@ static void perft(Board* board, int depth, int maxDepth) {
 
 #endif
 
-static int findMaxDepth(int test) {
+static int findMaxDepth(int test, int maxDepth) {
     int depth = 9;
     while (PERFT_SOLUTIONS[test][depth] == 0) {
         --depth;
     }
-    return depth;
+    return depth < maxDepth ? depth : maxDepth;
 }
 
 static void perftTest(int maxDepth) {
@@ -389,30 +393,28 @@ static void perftTest(int maxDepth) {
             puts("ERROR: Invalid FEN");
             return;
         }
-        memset(curSolutions, 0, sizeof(curSolutions));
-        int maxTestDepth = findMaxDepth(test);
-        if (maxTestDepth < maxDepth) {
-            maxDepth = maxTestDepth;
-        }
+        memset(curTestResult, 0, sizeof(curTestResult));
+        int maxTestDepth = findMaxDepth(test, maxDepth);
         uint64 startTime = getTime();
-        perft(&board, 0, maxDepth);
+        perft(&board, 0, maxTestDepth);
         uint64 elapsedTime = getTime() - startTime;
         int passed = 1;
-        for (int depth = 1; depth <= maxDepth; ++depth) {
-            printf("depth: %d | test result: %13llu | ", depth, curSolutions[depth]);
-            if (curSolutions[depth] == PERFT_SOLUTIONS[test][depth]) {
+        for (int depth = 1; depth <= maxTestDepth; ++depth) {
+            printf("depth: %d | test result: %13llu | ", depth, curTestResult[depth]);
+            if (curTestResult[depth] == PERFT_SOLUTIONS[test][depth]) {
                 puts("passed");
             } else {
                 printf("----FAILED---- answer: %lld\n", PERFT_SOLUTIONS[test][depth]);
                 passed = 0;
             }
         }
-        totalLeafNodes += curSolutions[maxDepth];
+        totalLeafNodes += curTestResult[maxTestDepth];
         numPassed += passed;
         printf("total time: %lld ms\n", elapsedTime);
         totalTime += elapsedTime;
         freeHashTable(&board.pvTable);
     }
+    puts("----------------------------------------------------------------------------------------");
     if (totalTime == 0) {
         printf("This engine visited %lld leaf nodes in < 1 millisecond.\n", totalLeafNodes);
         printf("Average: > %lld Leaf Nodes / Second\n", totalLeafNodes * 1000);
@@ -425,6 +427,8 @@ static void perftTest(int maxDepth) {
 }
 
 int main() {
+    puts("---------------------------");
+
 #if defined(OS_WINDOWS)
     puts("OS: Windows");
 #else
@@ -437,8 +441,16 @@ int main() {
     puts("COMPILER: GCC");
 #endif
 
+#if defined(PERFT_MULTITHREADED)
+    puts("Multithreaded?: Y");
+#else
+    puts("Multithreaded?: N");
+#endif
+
+    puts("---------------------------");
+    
     initializeAll();
-    printf("Enter the max search depth for the perft tests (1-6 recommended): ");
+    printf("Enter the max search depth for the perft tests (3-5 recommended): ");
     int maxDepth;
 #if defined(COMPILER_MSVS)
     if (scanf_s("%d", &maxDepth) != 1 || maxDepth < 1) {
